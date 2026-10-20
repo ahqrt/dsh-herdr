@@ -29,9 +29,10 @@ test("resolvePaths honors overrides and defaults under ~/.dsh/herdr", () => {
   assert.equal(paths.artifactsRoot, join(homedir(), ".dsh/herdr/tasks"));
   assert.equal(paths.aliasesFile, join(homedir(), ".pi/agent/model-aliases.md"));
 
-  const custom = resolvePaths({ homeDir: "/tmp/h", stateFile: "~/s.json" });
+  const customHome = resolve("/tmp/h");
+  const custom = resolvePaths({ homeDir: customHome, stateFile: "~/s.json" });
   assert.equal(custom.stateFile, join(homedir(), "s.json"));
-  assert.equal(custom.auditFile, join(resolve("/tmp/h"), "audit.ndjson"));
+  assert.equal(custom.auditFile, join(customHome, "audit.ndjson"));
 });
 
 test("repoKey normalizes", () => {
