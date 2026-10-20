@@ -23,8 +23,6 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
     topology: auto
     workspaceLabel: "DSH · {repo}"
 
-    # keep panes for inspection; close explicitly with herdr_close_agent
-    keepPanes: true
 ```
 
 ## Keys
@@ -49,7 +47,6 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `stateFile` | string | `state.json` | Relative to `homeDir`, or absolute / `~`. |
 | `auditFile` | string | `audit.ndjson` | Relative to `homeDir`, or absolute / `~`. |
 | `allowCwd` | string[] | `[]` | Hard boundary. Empty means "any directory". |
-| `keepPanes` | boolean | `true` | Leave panes open after harvest (the intended workflow). |
 
 ## Model aliases
 

@@ -21,7 +21,6 @@ export interface PluginConfig {
   stateFile: string;
   auditFile: string;
   allowCwd: string[];
-  keepPanes: boolean;
 }
 
 export const DEFAULT_CONFIG: PluginConfig = {
@@ -43,7 +42,6 @@ export const DEFAULT_CONFIG: PluginConfig = {
   stateFile: "state.json",
   auditFile: "audit.ndjson",
   allowCwd: [],
-  keepPanes: true,
 };
 
 /** Merge loader input over defaults and coerce the knobs that have ranges. */

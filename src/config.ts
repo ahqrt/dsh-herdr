@@ -26,5 +26,4 @@ export const Config = z.object({
   stateFile: z.string().default(DEFAULT_CONFIG.stateFile),
   auditFile: z.string().default(DEFAULT_CONFIG.auditFile),
   allowCwd: z.array(z.string()).default([]),
-  keepPanes: z.boolean().default(DEFAULT_CONFIG.keepPanes),
 });

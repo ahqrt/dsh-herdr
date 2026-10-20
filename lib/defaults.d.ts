@@ -18,7 +18,6 @@ export interface PluginConfig {
     stateFile: string;
     auditFile: string;
     allowCwd: string[];
-    keepPanes: boolean;
 }
 export declare const DEFAULT_CONFIG: PluginConfig;
 /** Merge loader input over defaults and coerce the knobs that have ranges. */

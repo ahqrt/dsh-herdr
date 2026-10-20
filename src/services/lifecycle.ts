@@ -9,7 +9,6 @@ export interface LifecycleDeps {
   transport: HerdrTransport;
   store: TaskStore;
   audit: AuditLog;
-  keepPanes: boolean;
 }
 
 export interface CloseInput {
@@ -137,7 +136,7 @@ export class LifecycleService {
         name: record.name,
         kind: record.kind,
         model: record.model,
-        status: agent?.status && record.status !== "interrupted" ? record.status : record.status,
+        status: record.status,
         herdrStatus: agent?.status,
         cwd: agent?.cwd ?? record.cwd,
         paneId: agent?.paneId ?? record.paneId,

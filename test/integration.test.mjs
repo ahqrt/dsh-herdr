@@ -81,7 +81,7 @@ function setup() {
     ids: systemIds,
   });
   const message = new MessageService({ transport, store, audit });
-  const lifecycle = new LifecycleService({ transport, store, audit, keepPanes: true });
+  const lifecycle = new LifecycleService({ transport, store, audit });
   const doctor = new DoctorService({ transport, config, paths, env: {} });
 
   return {

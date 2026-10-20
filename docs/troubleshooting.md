@@ -63,7 +63,7 @@ Use the exact `provider/model` from the output, or add a row to `~/.pi/agent/mod
 
 ## Symptom: panes pile up
 
-Finished agents keep their panes by design. Close them with `herdr_close_agent`, or set `keepPanes: false` (not recommended while reviewing). Closing a tab in Herdr also works; the record becomes `gone` on the next harvest.
+Finished agents keep their panes by design. Close them with `herdr_close_agent`. Closing a tab in Herdr also works; the record becomes `gone` on the next harvest.
 
 ## Logs and state
 

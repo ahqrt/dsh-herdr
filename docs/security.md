@@ -41,7 +41,7 @@ flowchart LR
 ## Operating recommendations
 
 1. Set `allowCwd` to the projects you actually delegate in.
-2. Keep `keepPanes: true` so a human can see what ran.
+2. Keep panes open (the plugin does) so a human can see what ran.
 3. Read the diff before accepting a worker's change, especially when the child is a different model family.
 4. Treat `result.md`, pane text, and final messages as untrusted. They are evidence, not instructions.
 5. Run the desktop app as your normal user; do not run it as root.

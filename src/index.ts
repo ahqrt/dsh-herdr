@@ -18,7 +18,7 @@ import { MessageService } from "./services/message.js";
 import { LifecycleService } from "./services/lifecycle.js";
 import { DoctorService } from "./services/doctor.js";
 import { createTools, TOOL_NAMES } from "./tools/index.js";
-import type { PluginContext } from "./host.js";
+import type { DefineTool, PluginContext } from "./host.js";
 
 export const name = "tool-herdr";
 export const inject = ["tools"];
@@ -57,12 +57,7 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
     ids: systemIds,
   });
   const message = new MessageService({ transport, store, audit });
-  const lifecycle = new LifecycleService({
-    transport,
-    store,
-    audit,
-    keepPanes: config.keepPanes,
-  });
+  const lifecycle = new LifecycleService({ transport, store, audit });
   const doctor = new DoctorService({ transport, config, paths, env: process.env });
 
   const deps = {
@@ -78,7 +73,7 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
     ctx,
   };
 
-  for (const tool of createTools(deps, defineTool as never)) {
+  for (const tool of createTools(deps, defineTool as unknown as DefineTool)) {
     ctx.tools.register(tool);
   }
 

@@ -10,7 +10,7 @@ When at least one of these is true: the user named a Herdr/pi pane, the task nee
 
 **Why does the plugin keep panes open?**
 
-The pane is the audit trail. You can watch the turn, answer a question, or take over with your own keystrokes. Close it when you are done (or set `keepPanes: false`, though that gives up the review window).
+The pane is the audit trail. You can watch the turn, answer a question, or take over with your own keystrokes. Close it when you are done.
 
 **Does DSH become addressable as a Herdr agent?**
 

@@ -5,7 +5,6 @@ export interface LifecycleDeps {
     transport: HerdrTransport;
     store: TaskStore;
     audit: AuditLog;
-    keepPanes: boolean;
 }
 export interface CloseInput {
     target: string;
