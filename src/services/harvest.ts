@@ -116,7 +116,8 @@ export class HarvestService {
     const maxChars = config.maxResultChars;
     const finalMessage = truncate(finalRaw, maxChars);
     const resultText = truncate(bodyText, maxChars);
-    const blockedQuestion = status === "blocked" ? extractQuestion(transcriptTail ?? "") : undefined;
+    const blockedQuestion =
+      status === "blocked" ? extractQuestion(transcriptTail ?? "") : undefined;
 
     const summary =
       (meta.summary && meta.summary.trim()) ||
@@ -144,9 +145,7 @@ export class HarvestService {
       sessionPath,
       summary,
       finalMessage: finalMessage || undefined,
-      result: resultPath
-        ? { path: resultPath, text: resultText, meta }
-        : undefined,
+      result: resultPath ? { path: resultPath, text: resultText, meta } : undefined,
       diff,
       tests: meta.tests,
       files: mergeFiles(meta.files, diff?.files),
@@ -156,7 +155,9 @@ export class HarvestService {
           ? { question: blockedQuestion ?? "", tail: truncate(transcriptTail ?? "", 12_000) }
           : undefined,
       transcriptTail: truncate(transcriptTail ?? "", 12_000) || undefined,
-      error: sessionError ? { code: "AGENT_FAILED", message: sessionError.errorMessage } : undefined,
+      error: sessionError
+        ? { code: "AGENT_FAILED", message: sessionError.errorMessage }
+        : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
       timing: {
         createdAt: record.createdAt,
@@ -168,11 +169,7 @@ export class HarvestService {
     };
   }
 
-  private async readTail(
-    target: string,
-    lines: number,
-    signal?: AbortSignal,
-  ): Promise<string> {
+  private async readTail(target: string, lines: number, signal?: AbortSignal): Promise<string> {
     try {
       return await this.deps.transport.readAgent(
         target,
@@ -213,7 +210,10 @@ function classify(input: {
   return "running";
 }
 
-function mergeFiles(declared: string | undefined, changed: string[] | undefined): string[] | undefined {
+function mergeFiles(
+  declared: string | undefined,
+  changed: string[] | undefined,
+): string[] | undefined {
   const files = new Set<string>();
   for (const raw of [declared, changed]) {
     if (!raw) continue;

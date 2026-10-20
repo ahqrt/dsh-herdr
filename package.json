@@ -10,7 +10,8 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./schema/agent-result.schema.json": "./schema/agent-result.schema.json"
   },
   "files": [
     "lib",
@@ -62,6 +63,7 @@
     "@deepseek-ai/schemastery": "~3.18.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@types/node": "^22.18.0",
     "typescript": "^5.9.3"
   },
@@ -72,7 +74,9 @@
     "test:only": "node --test \"test/*.test.mjs\"",
     "pack": "pnpm build && npm pack",
     "test:coverage": "pnpm build && node --test --experimental-test-coverage \"test/*.test.mjs\"",
-    "live": "pnpm build && node scripts/live-smoke.mjs"
+    "live": "pnpm build && node scripts/live-smoke.mjs",
+    "format": "biome format --write src test scripts",
+    "format:check": "biome format src test scripts"
   },
   "publishConfig": {
     "access": "public",

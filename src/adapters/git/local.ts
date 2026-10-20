@@ -7,7 +7,11 @@ import { dirname } from "node:path";
 import type { DiffEvidence, GitBaseline } from "../../domain/types.js";
 import type { GitDiffInput, GitService } from "../../ports/store.js";
 
-function runGit(cwd: string, args: string[], timeoutMs = 15_000): Promise<{ ok: boolean; stdout: string; stderr: string }> {
+function runGit(
+  cwd: string,
+  args: string[],
+  timeoutMs = 15_000,
+): Promise<{ ok: boolean; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     execFile(
       "git",
@@ -56,7 +60,12 @@ export class LocalGit implements GitService {
       .map((line) => line.slice(3).trim())
       .filter(Boolean);
     const files = statusLines
-      .map((line) => line.slice(3).trim().replace(/^.* -> /, ""))
+      .map((line) =>
+        line
+          .slice(3)
+          .trim()
+          .replace(/^.* -> /, ""),
+      )
       .filter(Boolean);
 
     let text = patch.ok ? patch.stdout : "";

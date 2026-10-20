@@ -52,10 +52,19 @@ export interface HerdrTransport {
 
   listAgents(signal?: AbortSignal): Promise<AgentInfo[]>;
   getAgent(target: string, signal?: AbortSignal): Promise<AgentInfo | undefined>;
-  readAgent(target: string, options: { lines?: number; source?: string }, signal?: AbortSignal): Promise<string>;
+  readAgent(
+    target: string,
+    options: { lines?: number; source?: string },
+    signal?: AbortSignal,
+  ): Promise<string>;
 
   startAgent(spec: StartAgentSpec, signal?: AbortSignal): Promise<{ paneId: string }>;
-  promptAgent(target: string, text: string, options: PromptOptions, signal?: AbortSignal): Promise<PromptOutcome>;
+  promptAgent(
+    target: string,
+    text: string,
+    options: PromptOptions,
+    signal?: AbortSignal,
+  ): Promise<PromptOutcome>;
   sendKeys(target: string, keys: string[], signal?: AbortSignal): Promise<void>;
 
   splitPane(

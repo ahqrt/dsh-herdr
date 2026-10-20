@@ -4,7 +4,12 @@
 import { execFile } from "node:child_process";
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { describeAliases, loadAliases, resolveModelSpec, type AliasSummary } from "../domain/aliases.js";
+import {
+  describeAliases,
+  loadAliases,
+  resolveModelSpec,
+  type AliasSummary,
+} from "../domain/aliases.js";
 import { ensureDir, type Paths } from "../domain/paths.js";
 import { formatVersion, MIN_HERDR_VERSION } from "../domain/version.js";
 import type { PluginConfig } from "../defaults.js";
@@ -49,12 +54,20 @@ export class DoctorService {
       checks.push({ status, label, detail });
     };
 
-    add(config.enabled ? "ok" : "fail", "enabled", config.enabled ? "true" : "false (spawns are refused)");
+    add(
+      config.enabled ? "ok" : "fail",
+      "enabled",
+      config.enabled ? "true" : "false (spawns are refused)",
+    );
     if (!config.enabled) next.push("set enabled: true in the tool-herdr config");
 
     const probe = await transport.probe(true);
     if (probe.state === "ok") {
-      add("ok", "herdr", `client ${formatVersion(probe.version)} (floor ${formatVersion(MIN_HERDR_VERSION)})`);
+      add(
+        "ok",
+        "herdr",
+        `client ${formatVersion(probe.version)} (floor ${formatVersion(MIN_HERDR_VERSION)})`,
+      );
     } else if (probe.state === "missing") {
       add("fail", "herdr", "binary not found on PATH");
       next.push("install herdr, or set herdrBin / HERDR_BIN");
@@ -82,7 +95,11 @@ export class DoctorService {
 
     const kinds = await transport.kinds().catch((): string[] => []);
     if (kinds.length > 0) {
-      add("ok", "agent kinds", `${kinds.length}: ${kinds.slice(0, 10).join(", ")}${kinds.length > 10 ? " …" : ""}`);
+      add(
+        "ok",
+        "agent kinds",
+        `${kinds.length}: ${kinds.slice(0, 10).join(", ")}${kinds.length > 10 ? " …" : ""}`,
+      );
       const defaultKind = String(config.defaultKind).toLowerCase();
       add(
         kinds.includes(defaultKind) ? "ok" : "fail",
@@ -103,7 +120,11 @@ export class DoctorService {
         resolved.error ?? `${config.defaultModel} → ${resolved.model}`,
       );
     } else {
-      add("warn", "aliases", `${paths.aliasesFile} not found; only provider/model ids will resolve`);
+      add(
+        "warn",
+        "aliases",
+        `${paths.aliasesFile} not found; only provider/model ids will resolve`,
+      );
       next.push("create ~/.pi/agent/model-aliases.md or set aliasesFile");
     }
 
@@ -115,7 +136,11 @@ export class DoctorService {
       unlinkSync(probeFile);
       add("ok", "state dirs", `${paths.root} writable`);
     } catch (error) {
-      add("fail", "state dirs", `not writable: ${error instanceof Error ? error.message : String(error)}`);
+      add(
+        "fail",
+        "state dirs",
+        `not writable: ${error instanceof Error ? error.message : String(error)}`,
+      );
       next.push(`fix permissions on ${paths.root}`);
     }
 
@@ -125,7 +150,11 @@ export class DoctorService {
     add("ok", "topology", `${topology}${inHerdr ? ` (inside pane ${env.HERDR_PANE_ID})` : ""}`);
 
     const piVersion = await versionOf("pi");
-    add(piVersion ? "ok" : "warn", "pi", piVersion ?? "pi not found on PATH (kind=pi spawns will fail)");
+    add(
+      piVersion ? "ok" : "warn",
+      "pi",
+      piVersion ?? "pi not found on PATH (kind=pi spawns will fail)",
+    );
 
     return {
       ok: !checks.some((check) => check.status === "fail"),

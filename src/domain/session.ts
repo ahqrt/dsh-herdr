@@ -49,7 +49,8 @@ export function assistantText(message: unknown): string {
   for (const block of content) {
     if (block && typeof block === "object") {
       const candidate = block as { type?: unknown; text?: unknown };
-      if (candidate.type === "text" && typeof candidate.text === "string") parts.push(candidate.text);
+      if (candidate.type === "text" && typeof candidate.text === "string")
+        parts.push(candidate.text);
     }
   }
   return parts.join("\n");
@@ -129,7 +130,11 @@ export function sessionStats(sessionPath: string | undefined): SessionUsage | un
     const content = message.content;
     if (Array.isArray(content)) {
       for (const block of content) {
-        if (block && typeof block === "object" && (block as { type?: unknown }).type === "toolCall") {
+        if (
+          block &&
+          typeof block === "object" &&
+          (block as { type?: unknown }).type === "toolCall"
+        ) {
           toolCalls++;
         }
       }

@@ -49,7 +49,9 @@ export function floorError(probe: HerdrProbe): Result<never> | null {
     return err(
       "HERDR_TOO_OLD",
       `herdr is installed but its version could not be determined, and ${need}`,
-      { remediation: `run \`herdr --version\` and upgrade if it is below ${formatVersion(MIN_HERDR_VERSION)}` },
+      {
+        remediation: `run \`herdr --version\` and upgrade if it is below ${formatVersion(MIN_HERDR_VERSION)}`,
+      },
     );
   }
   if (!isAtLeast(probe.version, MIN_HERDR_VERSION.major, MIN_HERDR_VERSION.minor)) {

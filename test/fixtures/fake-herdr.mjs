@@ -113,7 +113,15 @@ if (argv[0] === "agent" && argv[1] === "prompt") {
     mkdirSync(dirname(resultPath), { recursive: true });
     writeFileSync(
       resultPath,
-      ["---", "status: completed", "summary: fake agent finished the task", "tests: none", "files: work.txt", "---", "Fake detail body."].join("\n"),
+      [
+        "---",
+        "status: completed",
+        "summary: fake agent finished the task",
+        "tests: none",
+        "files: work.txt",
+        "---",
+        "Fake detail body.",
+      ].join("\n"),
     );
   }
   if (sessionPath) {

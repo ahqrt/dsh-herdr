@@ -46,7 +46,8 @@ export function createResultTool({ defineTool, deps }: ToolFactoryOptions) {
           summary: { type: "string" },
         },
       },
-      render: (_args: unknown, value: Parameters<typeof renderAgentResult>[0]) => renderAgentResult(value),
+      render: (_args: unknown, value: Parameters<typeof renderAgentResult>[0]) =>
+        renderAgentResult(value),
     },
     execute: wrapExecute(async (args: Record<string, unknown>, exec) => {
       const target = String(args.target ?? "");
@@ -57,7 +58,8 @@ export function createResultTool({ defineTool, deps }: ToolFactoryOptions) {
         });
       }
 
-      const shouldWait = args.wait === true || (args.wait !== false && isActiveStatus(record.status));
+      const shouldWait =
+        args.wait === true || (args.wait !== false && isActiveStatus(record.status));
       if (shouldWait) {
         const settled = await waitForSettle(
           deps.transport,
@@ -98,7 +100,9 @@ async function resolveRecord(
   const live = await deps.transport.getAgent(target, signal);
   if (!live || (!live.paneId && !live.name)) return undefined;
 
-  const safe = String(live.name ?? live.paneId ?? target).replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 64);
+  const safe = String(live.name ?? live.paneId ?? target)
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .slice(0, 64);
   const artifactDir = ensureDir(join(deps.paths.artifactsRoot, "external", safe));
   return {
     schemaVersion: 1,

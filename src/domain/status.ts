@@ -6,7 +6,9 @@ import type { AgentResult, TaskStatus } from "./types.js";
 
 /** A task that still occupies a concurrency slot and should not be closed silently. */
 export function isActiveStatus(status: TaskStatus): boolean {
-  return status === "starting" || status === "working" || status === "blocked" || status === "running";
+  return (
+    status === "starting" || status === "working" || status === "blocked" || status === "running"
+  );
 }
 
 /** A task whose turn is over (successfully or not). */

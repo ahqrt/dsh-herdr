@@ -63,7 +63,9 @@ export function wrapExecute<A, R>(
 /** The review packet, rendered for the model. */
 export function renderAgentResult(value: AgentResult): ContentBlock[] {
   const lines: string[] = [];
-  const model = value.agent.model ? ` (${value.agent.model}${value.agent.thinking ? ` · ${value.agent.thinking}` : ""})` : "";
+  const model = value.agent.model
+    ? ` (${value.agent.model}${value.agent.thinking ? ` · ${value.agent.thinking}` : ""})`
+    : "";
   lines.push(
     `[herdr] ${value.role} ${value.agent.kind}${model} → ${value.status}${value.status === "idle" ? " (observed)" : ""}`,
   );
@@ -75,12 +77,16 @@ export function renderAgentResult(value: AgentResult): ContentBlock[] {
   if (value.summary) lines.push(`summary: ${value.summary}`);
   if (value.error) lines.push(`error: ${value.error.code}: ${value.error.message}`);
   if (value.blocked?.question) {
-    lines.push("blocked — the agent is waiting for an answer. Ask the user, then call herdr_message_agent:");
+    lines.push(
+      "blocked — the agent is waiting for an answer. Ask the user, then call herdr_message_agent:",
+    );
     lines.push(value.blocked.question);
   }
   if (value.diff) {
     const files = value.diff.files;
-    const lastStat = value.diff.stat ? value.diff.stat.split("\n").filter(Boolean).slice(-1)[0] : "";
+    const lastStat = value.diff.stat
+      ? value.diff.stat.split("\n").filter(Boolean).slice(-1)[0]
+      : "";
     lines.push(`diff: ${files.length} file(s)${lastStat ? ` · ${lastStat}` : ""}`);
     if (files.length) {
       lines.push(`files: ${files.slice(0, 12).join(", ")}${files.length > 12 ? " …" : ""}`);
@@ -98,7 +104,9 @@ export function renderAgentResult(value: AgentResult): ContentBlock[] {
   }
   if (value.warnings?.length) lines.push(`warnings: ${value.warnings.join("; ")}`);
   if (value.nextAction === "wait") {
-    lines.push("next: call herdr_get_agent_result with wait:true to keep waiting; do not re-submit the task");
+    lines.push(
+      "next: call herdr_get_agent_result with wait:true to keep waiting; do not re-submit the task",
+    );
   } else if (value.nextAction === "answer") {
     lines.push("next: ask the user, then answer with herdr_message_agent");
   }
@@ -124,7 +132,9 @@ export function renderFleet(rows: FleetRow[]): ContentBlock[] {
         (row.name ?? row.paneId ?? "?").padEnd(22),
         String(row.status ?? "?").padEnd(9),
         String(row.kind ?? "?").padEnd(7),
-        String(row.model ?? "-").slice(0, 42).padEnd(42),
+        String(row.model ?? "-")
+          .slice(0, 42)
+          .padEnd(42),
         row.cwd ?? "",
       ].join(" "),
     );
@@ -142,7 +152,10 @@ export function renderDoctor(value: DoctorReport): ContentBlock[] {
     const marker = check.status === "ok" ? "ok  " : check.status === "warn" ? "warn" : "FAIL";
     lines.push(`[${marker}] ${check.label}: ${check.detail}`);
   }
-  lines.push("", `runtime: node ${value.runtime.node} · ${value.runtime.platform} · topology ${value.runtime.topology}`);
+  lines.push(
+    "",
+    `runtime: node ${value.runtime.node} · ${value.runtime.platform} · topology ${value.runtime.topology}`,
+  );
   if (value.aliases.length > 0) {
     lines.push(
       `aliases: ${value.aliases.map((alias) => `${alias.alias}→${alias.model}`).join(", ")}`,

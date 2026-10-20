@@ -84,7 +84,9 @@ export class FileTaskStore implements TaskStore {
   }
 
   activeCount(): Promise<number> {
-    return Promise.resolve(Object.values(this.read().tasks).filter((task) => isActiveStatus(task.status)).length);
+    return Promise.resolve(
+      Object.values(this.read().tasks).filter((task) => isActiveStatus(task.status)).length,
+    );
   }
 
   getWorkspace(key: string): Promise<WorkspaceRecord | undefined> {
@@ -123,7 +125,8 @@ export class FileTaskStore implements TaskStore {
       return {
         schemaVersion: 1,
         tasks: parsed.tasks && typeof parsed.tasks === "object" ? parsed.tasks : {},
-        workspaces: parsed.workspaces && typeof parsed.workspaces === "object" ? parsed.workspaces : {},
+        workspaces:
+          parsed.workspaces && typeof parsed.workspaces === "object" ? parsed.workspaces : {},
       };
     } catch {
       // Preserve the broken file for diagnosis and start clean. Losing the
@@ -156,15 +159,24 @@ export class FileTaskStore implements TaskStore {
         writeSync(descriptor, JSON.stringify({ pid: process.pid, ts: this.clock.now() }));
       } catch (error) {
         if (!isAlreadyExists(error)) {
-          throw new HerdrError("STORE_UNAVAILABLE", `cannot acquire state lock: ${messageOf(error)}`, {
-            remediation: `check permissions on ${this.lockPath}`,
-          });
+          throw new HerdrError(
+            "STORE_UNAVAILABLE",
+            `cannot acquire state lock: ${messageOf(error)}`,
+            {
+              remediation: `check permissions on ${this.lockPath}`,
+            },
+          );
         }
         this.breakStaleLock();
         if (this.clock.now() >= deadline) {
-          throw new HerdrError("STORE_UNAVAILABLE", `timed out waiting for the state lock ${this.lockPath}`, {
-            remediation: "another DSH process is stuck holding the lock; remove the .lock file if no DSH is running",
-          });
+          throw new HerdrError(
+            "STORE_UNAVAILABLE",
+            `timed out waiting for the state lock ${this.lockPath}`,
+            {
+              remediation:
+                "another DSH process is stuck holding the lock; remove the .lock file if no DSH is running",
+            },
+          );
         }
         sleepSync(LOCK_RETRY_MS);
       }
@@ -201,7 +213,9 @@ function emptyState(): StateFile {
 }
 
 function isAlreadyExists(error: unknown): boolean {
-  return Boolean(error && typeof error === "object" && (error as NodeJS.ErrnoException).code === "EEXIST");
+  return Boolean(
+    error && typeof error === "object" && (error as NodeJS.ErrnoException).code === "EEXIST",
+  );
 }
 
 function messageOf(error: unknown): string {

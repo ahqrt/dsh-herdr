@@ -104,7 +104,9 @@ function cleanup(root) {
   rmSync(root, { recursive: true, force: true });
 }
 
-test("spawn → exact harvest → diff → message → interrupt → close", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("spawn → exact harvest → diff → message → interrupt → close", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     const result = await ctx.spawn.spawn({
@@ -141,7 +143,9 @@ test("spawn → exact harvest → diff → message → interrupt → close", { s
       .split("\n")
       .map((line) => JSON.parse(line));
     assert.ok(audit.some((entry) => entry.event === "spawn-intent"));
-    assert.ok(audit.some((entry) => entry.event === "spawn-settled" && entry.status === "completed"));
+    assert.ok(
+      audit.some((entry) => entry.event === "spawn-settled" && entry.status === "completed"),
+    );
 
     const fleet = await ctx.lifecycle.list({});
     assert.equal(fleet.length, 1);
@@ -171,7 +175,9 @@ test("spawn → exact harvest → diff → message → interrupt → close", { s
   }
 });
 
-test("a clientTaskId makes a retried spawn idempotent", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("a clientTaskId makes a retried spawn idempotent", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     const args = {
@@ -190,7 +196,9 @@ test("a clientTaskId makes a retried spawn idempotent", { skip: windows && "fake
   }
 });
 
-test("the concurrency cap refuses a second live spawn", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("the concurrency cap refuses a second live spawn", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     await ctx.store.put({
@@ -223,7 +231,9 @@ test("the concurrency cap refuses a second live spawn", { skip: windows && "fake
   }
 });
 
-test("cwd outside allowCwd is refused before a pane exists", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("cwd outside allowCwd is refused before a pane exists", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     const outside = mkdtempSync(join(tmpdir(), "herdr-outside-"));
@@ -242,7 +252,9 @@ test("cwd outside allowCwd is refused before a pane exists", { skip: windows && 
   }
 });
 
-test("a kind that refuses model fails before a pane exists", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("a kind that refuses model fails before a pane exists", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     await assert.rejects(
@@ -260,7 +272,9 @@ test("a kind that refuses model fails before a pane exists", { skip: windows && 
   }
 });
 
-test("doctor reports a healthy fake environment", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("doctor reports a healthy fake environment", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     const report = await ctx.doctor.run();
@@ -273,7 +287,9 @@ test("doctor reports a healthy fake environment", { skip: windows && "fake herdr
   }
 });
 
-test("closing an unowned handle is refused", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("closing an unowned handle is refused", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const ctx = setup();
   try {
     await assert.rejects(

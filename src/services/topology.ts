@@ -70,10 +70,7 @@ export class TopologyService {
     if (existing) workspaceId = existing.workspaceId;
 
     if (!workspaceId) {
-      const created = await transport.createWorkspace(
-        { cwd: input.cwd, label },
-        input.signal,
-      );
+      const created = await transport.createWorkspace({ cwd: input.cwd, label }, input.signal);
       workspaceId = created.workspaceId;
       await store.setWorkspace(key, {
         workspaceId,
@@ -93,10 +90,7 @@ export class TopologyService {
       // once; a validation/permission failure is not a missing workspace.
       if (!(error instanceof HerdrError)) throw error;
       if (error.code !== "AGENT_NOT_FOUND" && error.code !== "PANE_GONE") throw error;
-      const recreated = await transport.createWorkspace(
-        { cwd: input.cwd, label },
-        input.signal,
-      );
+      const recreated = await transport.createWorkspace({ cwd: input.cwd, label }, input.signal);
       await store.setWorkspace(key, {
         workspaceId: recreated.workspaceId,
         rootPaneId: recreated.rootPaneId,

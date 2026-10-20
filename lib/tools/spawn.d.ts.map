@@ -1,1 +1,1 @@
-{"version":3,"file":"spawn.d.ts","sourceRoot":"","sources":["../../src/tools/spawn.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,YAAY,CAAC;AAErD,wBAAgB,eAAe,CAAC,EAAE,UAAU,EAAE,IAAI,EAAE,EAAE,kBAAkB,WA8GvE"}
+{"version":3,"file":"spawn.d.ts","sourceRoot":"","sources":["../../src/tools/spawn.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,YAAY,CAAC;AAErD,wBAAgB,eAAe,CAAC,EAAE,UAAU,EAAE,IAAI,EAAE,EAAE,kBAAkB,WAgHvE"}

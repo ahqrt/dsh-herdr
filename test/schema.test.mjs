@@ -3,12 +3,23 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const schema = JSON.parse(readFileSync(join(process.cwd(), "schema", "agent-result.schema.json"), "utf8"));
+const schema = JSON.parse(
+  readFileSync(join(process.cwd(), "schema", "agent-result.schema.json"), "utf8"),
+);
 
 test("the result schema is valid JSON with the documented required fields", () => {
   assert.equal(schema.type, "object");
   assert.equal(schema.additionalProperties, false);
-  for (const key of ["schemaVersion", "taskId", "status", "role", "agent", "summary", "timing", "nextAction"]) {
+  for (const key of [
+    "schemaVersion",
+    "taskId",
+    "status",
+    "role",
+    "agent",
+    "summary",
+    "timing",
+    "nextAction",
+  ]) {
     assert.ok(schema.required.includes(key), `missing required ${key}`);
   }
   assert.deepEqual(schema.properties.schemaVersion, { const: 1 });

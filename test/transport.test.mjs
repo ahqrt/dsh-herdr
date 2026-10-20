@@ -68,7 +68,9 @@ test("normalizeAgent maps the live snake_case shape", () => {
   assert.deepEqual(normalizeAgent(null), {});
 });
 
-test("HerdrCli probes the version and parses agent list JSON", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("HerdrCli probes the version and parses agent list JSON", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   await withFake(async ({ env }) => {
     const cli = new HerdrCli(fake, env);
     const probe = await cli.probe();
@@ -81,7 +83,9 @@ test("HerdrCli probes the version and parses agent list JSON", { skip: windows &
   });
 });
 
-test("HerdrCli reads the kind list from the non-zero `herdr agent` help", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
+test("HerdrCli reads the kind list from the non-zero `herdr agent` help", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   await withFake(async ({ env }) => {
     const transport = new HerdrCliTransport(new HerdrCli(fake, env));
     assert.deepEqual(await transport.kinds(), ["pi", "agy", "claude"]);

@@ -81,11 +81,7 @@ export class MessageService {
     if (record) {
       await store.update(record.taskId, {
         status:
-          outcome === "blocked"
-            ? "blocked"
-            : status === "working"
-              ? "working"
-              : record.status,
+          outcome === "blocked" ? "blocked" : status === "working" ? "working" : record.status,
         updatedAt: Date.now(),
       });
     }

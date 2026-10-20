@@ -31,7 +31,9 @@ for (const [label, makeStore] of [
     try {
       const store = makeStore(dir);
       await store.put(record());
-      await store.put(record({ taskId: "t2", name: "worker-b", paneId: "w1:p9", status: "closed", createdAt: 2 }));
+      await store.put(
+        record({ taskId: "t2", name: "worker-b", paneId: "w1:p9", status: "closed", createdAt: 2 }),
+      );
 
       assert.equal((await store.find("t1")).name, "worker-a");
       assert.equal((await store.find("worker-a")).taskId, "t1");
@@ -53,7 +55,11 @@ for (const [label, makeStore] of [
     const dir = mkdtempSync(join(tmpdir(), "herdr-store-"));
     try {
       const store = makeStore(dir);
-      await store.setWorkspace("/repo", { workspaceId: "wV", rootPaneId: "wV:p1", label: "DSH · repo" });
+      await store.setWorkspace("/repo", {
+        workspaceId: "wV",
+        rootPaneId: "wV:p1",
+        label: "DSH · repo",
+      });
       assert.equal((await store.getWorkspace("/repo")).workspaceId, "wV");
     } finally {
       rmSync(dir, { recursive: true, force: true });

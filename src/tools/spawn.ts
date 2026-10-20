@@ -38,7 +38,8 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
       },
       cwd: {
         type: "string",
-        description: "Working directory for the child. Defaults to this DSH session's working directory.",
+        description:
+          "Working directory for the child. Defaults to this DSH session's working directory.",
       },
       role: {
         type: "string",
@@ -75,7 +76,8 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
           summary: { type: "string" },
         },
       },
-      render: (_args: unknown, value: Parameters<typeof renderAgentResult>[0]) => renderAgentResult(value),
+      render: (_args: unknown, value: Parameters<typeof renderAgentResult>[0]) =>
+        renderAgentResult(value),
     },
     execute: wrapExecute(async (args: Record<string, unknown>, exec) => {
       const cwd = await resolveCwd({

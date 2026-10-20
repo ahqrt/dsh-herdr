@@ -86,18 +86,24 @@ export class HerdrCliTransport implements HerdrTransport {
   }
 
   async listAgents(signal?: AbortSignal): Promise<AgentInfo[]> {
-    const result = await this.cli.execWithDefaultTimeout<{ agents?: unknown[] }>(["agent", "list"], {
-      signal,
-    });
+    const result = await this.cli.execWithDefaultTimeout<{ agents?: unknown[] }>(
+      ["agent", "list"],
+      {
+        signal,
+      },
+    );
     if (!result.ok) throw new HerdrError(result.error.code, result.error.message, result.error);
     const agents = result.data?.agents;
     return Array.isArray(agents) ? agents.map(normalizeAgent) : [];
   }
 
   async getAgent(target: string, signal?: AbortSignal): Promise<AgentInfo | undefined> {
-    const result = await this.cli.execWithDefaultTimeout<{ agent?: unknown }>(["agent", "get", target], {
-      signal,
-    });
+    const result = await this.cli.execWithDefaultTimeout<{ agent?: unknown }>(
+      ["agent", "get", target],
+      {
+        signal,
+      },
+    );
     if (!result.ok) {
       if (result.error.code === "AGENT_NOT_FOUND" || result.error.code === "PANE_GONE") {
         return undefined;
@@ -238,14 +244,16 @@ export class HerdrCliTransport implements HerdrTransport {
     if (!result.ok) throw new HerdrError(result.error.code, result.error.message, result.error);
     const workspaces = result.data?.workspaces;
     if (!Array.isArray(workspaces)) return [];
-    return workspaces.map((value) => {
-      const object = asRecord(value);
-      return {
-        workspaceId: pickString(object, "workspace_id", "workspaceId") ?? "",
-        label: pickString(object, "label"),
-        activeTabId: pickString(object, "active_tab_id"),
-      };
-    }).filter((workspace) => workspace.workspaceId.length > 0);
+    return workspaces
+      .map((value) => {
+        const object = asRecord(value);
+        return {
+          workspaceId: pickString(object, "workspace_id", "workspaceId") ?? "",
+          label: pickString(object, "label"),
+          activeTabId: pickString(object, "active_tab_id"),
+        };
+      })
+      .filter((workspace) => workspace.workspaceId.length > 0);
   }
 
   async createWorkspace(
@@ -323,7 +331,11 @@ export class HerdrCliTransport implements HerdrTransport {
 
   async closePane(paneId: string, signal?: AbortSignal): Promise<void> {
     const result = await this.cli.exec(["pane", "close", paneId], { signal });
-    if (!result.ok && result.error.code !== "AGENT_NOT_FOUND" && result.error.code !== "PANE_GONE") {
+    if (
+      !result.ok &&
+      result.error.code !== "AGENT_NOT_FOUND" &&
+      result.error.code !== "PANE_GONE"
+    ) {
       throw new HerdrError(result.error.code, result.error.message, result.error);
     }
   }

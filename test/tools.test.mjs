@@ -60,7 +60,10 @@ function assertExplicitObjectSchemas(node, path) {
 test("the tool surface is exactly the documented seven", () => {
   const { dir, tools } = build();
   try {
-    assert.deepEqual(tools.map((tool) => tool.name), [...TOOL_NAMES]);
+    assert.deepEqual(
+      tools.map((tool) => tool.name),
+      [...TOOL_NAMES],
+    );
     for (const tool of tools) {
       assert.equal(typeof tool.description, "string");
       assert.ok(tool.description.length > 60, `${tool.name} needs a real description`);

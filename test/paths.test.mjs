@@ -2,7 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
-import { expandHome, isWithin, workspaceLabel, resolvePaths, repoKey } from "../lib/domain/paths.js";
+import {
+  expandHome,
+  isWithin,
+  workspaceLabel,
+  resolvePaths,
+  repoKey,
+} from "../lib/domain/paths.js";
 
 test("expandHome expands only the leading tilde", () => {
   assert.equal(expandHome("~/x"), join(homedir(), "x"));
@@ -19,7 +25,10 @@ test("isWithin rejects escapes and sibling prefixes", () => {
 });
 
 test("workspaceLabel substitutes the repo basename", () => {
-  assert.equal(workspaceLabel("DSH · {repo}", "/Users/apple/Desktop/stock/StrataForge"), "DSH · StrataForge");
+  assert.equal(
+    workspaceLabel("DSH · {repo}", "/Users/apple/Desktop/stock/StrataForge"),
+    "DSH · StrataForge",
+  );
   assert.equal(workspaceLabel(undefined, "/x/y"), "DSH · y");
 });
 

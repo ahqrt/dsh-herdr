@@ -66,8 +66,17 @@ export class LifecycleService {
     }
 
     await transport.closePane(record.paneId, input.signal);
-    await store.update(record.taskId, { status: "closed", closedAt: Date.now(), updatedAt: Date.now() });
-    audit.write({ event: "close", taskId: record.taskId, paneId: record.paneId, forced: input.force === true });
+    await store.update(record.taskId, {
+      status: "closed",
+      closedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    audit.write({
+      event: "close",
+      taskId: record.taskId,
+      paneId: record.paneId,
+      forced: input.force === true,
+    });
 
     return {
       closed: true,
@@ -76,13 +85,20 @@ export class LifecycleService {
     };
   }
 
-  async interrupt(target: string, signal?: AbortSignal): Promise<{ interrupted: boolean; message: string }> {
+  async interrupt(
+    target: string,
+    signal?: AbortSignal,
+  ): Promise<{ interrupted: boolean; message: string }> {
     const { transport, store, audit } = this.deps;
     const record = await store.find(target);
     if (!record) {
-      throw new HerdrError("TASK_NOT_OWNED", `refusing to interrupt "${target}": not spawned by this plugin`, {
-        remediation: "use the Herdr UI for panes you opened yourself",
-      });
+      throw new HerdrError(
+        "TASK_NOT_OWNED",
+        `refusing to interrupt "${target}": not spawned by this plugin`,
+        {
+          remediation: "use the Herdr UI for panes you opened yourself",
+        },
+      );
     }
     if (!record.name) {
       throw new HerdrError("TASK_NOT_FOUND", `task ${record.taskId} has no agent name`);
@@ -104,7 +120,9 @@ export class LifecycleService {
       transport.listAgents(options.signal).catch(() => [] as AgentInfo[]),
     ]);
     const byName = new Map(live.filter((agent) => agent.name).map((agent) => [agent.name!, agent]));
-    const byPane = new Map(live.filter((agent) => agent.paneId).map((agent) => [agent.paneId!, agent]));
+    const byPane = new Map(
+      live.filter((agent) => agent.paneId).map((agent) => [agent.paneId!, agent]),
+    );
     const rows: FleetRow[] = [];
     const claimed = new Set<string>();
 

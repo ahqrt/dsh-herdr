@@ -3,11 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import {
-  parseAliasTable,
-  parseModelSpec,
-  resolveModelSpec,
-} from "../lib/domain/aliases.js";
+import { parseAliasTable, parseModelSpec, resolveModelSpec } from "../lib/domain/aliases.js";
 
 const TABLE = `
 # 模型别名
@@ -41,7 +37,10 @@ test("parseModelSpec splits alias and [thinking]", () => {
   assert.deepEqual(parseModelSpec("grok4.7"), { alias: "grok4.7" });
   assert.deepEqual(parseModelSpec("grok4.7[high]"), { alias: "grok4.7", thinking: "high" });
   assert.deepEqual(parseModelSpec("xai/grok-4.7"), { rawModel: "xai/grok-4.7" });
-  assert.deepEqual(parseModelSpec("xai/grok-4.7[low]"), { rawModel: "xai/grok-4.7", thinking: "low" });
+  assert.deepEqual(parseModelSpec("xai/grok-4.7[low]"), {
+    rawModel: "xai/grok-4.7",
+    thinking: "low",
+  });
   assert.deepEqual(parseModelSpec(""), {});
 });
 

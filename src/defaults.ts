@@ -61,7 +61,9 @@ export function resolveConfig(raw: unknown): PluginConfig {
       const numeric = Number(value);
       if (Number.isFinite(numeric)) merged[key] = numeric as never;
     } else if (Array.isArray(fallback)) {
-      merged[key] = (Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : []) as never;
+      merged[key] = (
+        Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : []
+      ) as never;
     } else {
       merged[key] = String(value) as never;
     }

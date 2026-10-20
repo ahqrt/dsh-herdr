@@ -44,9 +44,14 @@ export class SpawnService {
     const { config, store, transport, clock, ids, paths, audit } = this.deps;
 
     if (!config.enabled) {
-      throw new HerdrError("SPAWN_REFUSED", "herdr delegation is disabled by config (enabled: false)", {
-        remediation: "set enabled: true in the tool-herdr config, or restart with a different profile",
-      });
+      throw new HerdrError(
+        "SPAWN_REFUSED",
+        "herdr delegation is disabled by config (enabled: false)",
+        {
+          remediation:
+            "set enabled: true in the tool-herdr config, or restart with a different profile",
+        },
+      );
     }
 
     if (input.clientTaskId) {
@@ -64,15 +69,25 @@ export class SpawnService {
     }
     const allowed = config.allowCwd.map((entry) => expandHome(entry)).filter(Boolean);
     if (allowed.length > 0 && !allowed.some((root) => isWithin(cwd, root))) {
-      throw new HerdrError("CWD_NOT_ALLOWED", `cwd ${cwd} is outside allowCwd (${allowed.join(", ")})`, {
-        remediation: "add the directory to allowCwd if this delegation is intentional",
-      });
+      throw new HerdrError(
+        "CWD_NOT_ALLOWED",
+        `cwd ${cwd} is outside allowCwd (${allowed.join(", ")})`,
+        {
+          remediation: "add the directory to allowCwd if this delegation is intentional",
+        },
+      );
     }
 
-    const active = (await store.activeCount());
+    const active = await store.activeCount();
     if (active >= config.maxParallelAgents) {
       const names = (await store.list())
-        .filter((task) => task.status === "starting" || task.status === "working" || task.status === "blocked" || task.status === "running")
+        .filter(
+          (task) =>
+            task.status === "starting" ||
+            task.status === "working" ||
+            task.status === "blocked" ||
+            task.status === "running",
+        )
         .map((task) => task.name);
       throw new HerdrError(
         "CONCURRENCY_LIMIT",
@@ -115,12 +130,14 @@ export class SpawnService {
     for (const task of await store.list()) if (task.name) taken.add(task.name);
 
     const requested = input.name ? normalizeAgentName(input.name) : undefined;
-    const name = requested || makeAgentName({
-      role: input.role ?? "worker",
-      flavor: resolvedModel.alias || kind,
-      suffix: ids.suffix(),
-      taken,
-    });
+    const name =
+      requested ||
+      makeAgentName({
+        role: input.role ?? "worker",
+        flavor: resolvedModel.alias || kind,
+        suffix: ids.suffix(),
+        taken,
+      });
     if (!AGENT_NAME_RE.test(name)) {
       throw new HerdrError(
         "VALIDATION_ERROR",
@@ -187,8 +204,18 @@ export class SpawnService {
     try {
       pane = await this.deps.topology.ensurePane({ cwd, name, signal: input.signal });
     } catch (error) {
-      await store.update(taskId, { status: "failed", updatedAt: clock.now(), error: messageOf(error) });
-      audit.write({ event: "spawn-failed", taskId, name, stage: "topology", error: messageOf(error) });
+      await store.update(taskId, {
+        status: "failed",
+        updatedAt: clock.now(),
+        error: messageOf(error),
+      });
+      audit.write({
+        event: "spawn-failed",
+        taskId,
+        name,
+        stage: "topology",
+        error: messageOf(error),
+      });
       throw error;
     }
 
@@ -214,8 +241,18 @@ export class SpawnService {
         input.signal,
       );
     } catch (error) {
-      await store.update(taskId, { status: "failed", updatedAt: clock.now(), error: messageOf(error) });
-      audit.write({ event: "spawn-failed", taskId, name, stage: "agent-start", error: messageOf(error) });
+      await store.update(taskId, {
+        status: "failed",
+        updatedAt: clock.now(),
+        error: messageOf(error),
+      });
+      audit.write({
+        event: "spawn-failed",
+        taskId,
+        name,
+        stage: "agent-start",
+        error: messageOf(error),
+      });
       throw error;
     }
 
@@ -223,12 +260,19 @@ export class SpawnService {
     try {
       boot = await this.waitForBoot(name, config.startTimeoutMs, input.signal);
     } catch (error) {
-      await store.update(taskId, { status: "failed", updatedAt: clock.now(), error: messageOf(error) });
+      await store.update(taskId, {
+        status: "failed",
+        updatedAt: clock.now(),
+        error: messageOf(error),
+      });
       audit.write({ event: "spawn-failed", taskId, name, stage: "boot", error: messageOf(error) });
       throw error;
     }
     if (boot === "blocked") {
-      const settled = await this.deps.harvest.harvest({ ...record, status: "blocked" }, { signal: input.signal });
+      const settled = await this.deps.harvest.harvest(
+        { ...record, status: "blocked" },
+        { signal: input.signal },
+      );
       await store.update(taskId, {
         status: "blocked",
         updatedAt: clock.now(),
@@ -238,7 +282,11 @@ export class SpawnService {
       return settled;
     }
 
-    await store.update(taskId, { status: "working", promptedAt: clock.now(), updatedAt: clock.now() });
+    await store.update(taskId, {
+      status: "working",
+      promptedAt: clock.now(),
+      updatedAt: clock.now(),
+    });
     record.promptedAt = clock.now();
 
     if (input.wait === false) {
@@ -253,7 +301,10 @@ export class SpawnService {
           remediation: "inspect the pane with herdr_list_agents, then retry or close it",
         });
       }
-      const interim = await this.deps.harvest.harvest({ ...record, status: "working" }, { signal: input.signal });
+      const interim = await this.deps.harvest.harvest(
+        { ...record, status: "working" },
+        { signal: input.signal },
+      );
       return { ...interim, status: interim.status === "blocked" ? "blocked" : "running" };
     }
 
@@ -268,14 +319,28 @@ export class SpawnService {
         updatedAt: clock.now(),
         error: messageOf(error),
       });
-      audit.write({ event: code === "ABORTED" ? "spawn-aborted" : "spawn-failed", taskId, name, stage: "prompt", error: messageOf(error) });
+      audit.write({
+        event: code === "ABORTED" ? "spawn-aborted" : "spawn-failed",
+        taskId,
+        name,
+        stage: "prompt",
+        error: messageOf(error),
+      });
       throw error;
     }
     if (outcome === "stalled") {
-      await store.update(taskId, { status: "failed", updatedAt: clock.now(), error: "prompt stalled" });
-      throw new HerdrError("AGENT_STALLED", `prompt did not start a turn in ${name} after one retry`, {
-        remediation: `inspect the pane (${pane.paneId}) with herdr_list_agents; the pane is kept for diagnosis`,
+      await store.update(taskId, {
+        status: "failed",
+        updatedAt: clock.now(),
+        error: "prompt stalled",
       });
+      throw new HerdrError(
+        "AGENT_STALLED",
+        `prompt did not start a turn in ${name} after one retry`,
+        {
+          remediation: `inspect the pane (${pane.paneId}) with herdr_list_agents; the pane is kept for diagnosis`,
+        },
+      );
     }
 
     const settled = await this.deps.harvest.harvest(
@@ -347,7 +412,8 @@ export class SpawnService {
   ): Promise<"idle" | "blocked"> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      if (signal?.aborted) throw new HerdrError("ABORTED", "spawn aborted while waiting for agent boot");
+      if (signal?.aborted)
+        throw new HerdrError("ABORTED", "spawn aborted while waiting for agent boot");
       const agent = await this.deps.transport.getAgent(name, signal).catch(() => undefined);
       if (agent?.status === "idle" || agent?.status === "done") return "idle";
       if (agent?.status === "blocked") return "blocked";

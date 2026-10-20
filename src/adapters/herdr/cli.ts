@@ -10,11 +10,7 @@ import { existsSync } from "node:fs";
 import { delimiter, join } from "node:path";
 import { HerdrError, type ErrorCode } from "../../domain/errors.js";
 import { err, ok, type Result } from "../../domain/result.js";
-import {
-  floorError,
-  parseVersion,
-  type HerdrProbe,
-} from "../../domain/version.js";
+import { floorError, parseVersion, type HerdrProbe } from "../../domain/version.js";
 
 const IS_WIN = process.platform === "win32";
 
@@ -35,9 +31,7 @@ export function resolveHerdrBin(configured?: string, env: NodeJS.ProcessEnv = pr
   if (env.HERDR_BIN) return env.HERDR_BIN;
 
   const name = "herdr";
-  const extensions = IS_WIN
-    ? (env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";")
-    : [""];
+  const extensions = IS_WIN ? (env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";") : [""];
   const path = (env.PATH ?? "").split(delimiter).filter(Boolean);
   for (const dir of path) {
     for (const extension of extensions) {
@@ -234,7 +228,9 @@ export class HerdrCli {
           finish(
             err(
               "HERDR_PROTOCOL",
-              firstError ? `herdr error: ${firstError.trim()}` : "herdr returned unparseable output",
+              firstError
+                ? `herdr error: ${firstError.trim()}`
+                : "herdr returned unparseable output",
               { details: { exitCode, stderr, stdout } },
             ),
           );
@@ -243,11 +239,9 @@ export class HerdrCli {
 
         if (parsed.error) {
           finish(
-            err(
-              mapHerdrCode(parsed.error.code),
-              String(parsed.error.message ?? "herdr error"),
-              { details: parsed.error },
-            ),
+            err(mapHerdrCode(parsed.error.code), String(parsed.error.message ?? "herdr error"), {
+              details: parsed.error,
+            }),
           );
           return;
         }
