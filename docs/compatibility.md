@@ -17,7 +17,7 @@
 
 | | Tested | Notes |
 |---|---|---|
-| DSH | `0.2.1-rc.2` | Desktop runtime. The tool and workingDirectory APIs are the only host dependencies. |
+| DSH | `0.2.1-rc.2` | Headless `web` profile boot: all seven tools activated (the loader compiles every parameter/output schema). The tool and workingDirectory APIs are the only host dependencies. |
 | Herdr client | `0.9.4` | Hard floor `0.9.0` (the `agent start --kind` contract). |
 | Herdr server | `0.9.1` | Client/server protocol `22` at the time of writing. |
 | Node | `22.22.3`, `24.x` in CI | ESM only; no native modules. |

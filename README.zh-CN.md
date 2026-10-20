@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.1.x`，实测 DSH `0.2.1-rc.2` + Herdr `0.9.4`（server `0.9.1`）。公共接口就是 7 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.1.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 7 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 7 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 

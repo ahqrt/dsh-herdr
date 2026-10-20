@@ -8,7 +8,7 @@
 
 `dsh-herdr` is the reference bridge between [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) and [Herdr](https://herdr.dev). It turns Herdr into an external subagent runtime: DSH stays the orchestrator and reviewer, while pi / agy / claude / codex / … do the work in visible, steerable panes.
 
-> Status: `0.1.x`, tested against DSH `0.2.1-rc.2` and Herdr `0.9.4` (server `0.9.1`). The public surface is the seven `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
+> Status: `0.1.x`, validated on DSH `0.2.1-rc.2` (all seven tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`). The public surface is the seven `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
