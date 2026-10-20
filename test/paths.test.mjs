@@ -31,9 +31,9 @@ test("resolvePaths honors overrides and defaults under ~/.dsh/herdr", () => {
 
   const custom = resolvePaths({ homeDir: "/tmp/h", stateFile: "~/s.json" });
   assert.equal(custom.stateFile, join(homedir(), "s.json"));
-  assert.equal(custom.auditFile, "/tmp/h/audit.ndjson");
+  assert.equal(custom.auditFile, join(resolve("/tmp/h"), "audit.ndjson"));
 });
 
 test("repoKey normalizes", () => {
-  assert.equal(repoKey("/repo/"), "/repo");
+  assert.equal(repoKey("/repo/"), resolve("/repo"));
 });

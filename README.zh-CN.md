@@ -1,7 +1,6 @@
 # dsh-herdr
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ahqrt/dsh-herdr/ci.yml?branch=main&label=CI)](https://github.com/ahqrt/dsh-herdr/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/dsh-herdr?label=npm)](https://www.npmjs.com/package/dsh-herdr)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node](https://img.shields.io/node/v/dsh-herdr)](package.json)
 
@@ -67,26 +66,28 @@ flowchart LR
 
 `desktop` profile 由 Electron 独占，不能 `dsh plugin`，要走应用内 **Plugins** 页：
 
-1. 安装 `dsh-herdr@0.1.0`（或开发期的 `file:` / `link:` 路径）。
-2. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
-3. 新建会话，工具列表里应出现 `herdr_*`。
+1. 先打包（或下载 release 附件）：
+
+   ```bash
+   pnpm install && pnpm build && pnpm pack
+   ```
+
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.1.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
+4. 新建会话，工具列表里应出现 `herdr_*`。
+
+`dsh-herdr` 会随每个 tag 发布到 npm；如果 npm 版本还没上线，用 tarball 或 checkout。
 
 ### 装进 CLI profile
 
 ```bash
+# 从 checkout
 dsh --profile herdr-dev --from-default-profile web --dump-config
-dsh plugin --profile herdr-dev add dsh-herdr
+dsh plugin --profile herdr-dev add file:$PWD
 dsh --profile herdr-dev --port 0 --no-open
-```
 
-### 从源码
-
-```bash
-pnpm install
-pnpm build
-pnpm test
-pnpm pack
-# 然后在 Plugins 页安装生成的 dsh-herdr-0.1.0.tgz
+# npm 发布后
+dsh plugin --profile herdr-dev add dsh-herdr
 ```
 
 完整步骤和本地开发回路：[docs/installation.md](docs/installation.md)。

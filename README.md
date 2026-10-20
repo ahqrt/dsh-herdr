@@ -1,7 +1,6 @@
 # dsh-herdr
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ahqrt/dsh-herdr/ci.yml?branch=main&label=CI)](https://github.com/ahqrt/dsh-herdr/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/dsh-herdr?label=npm)](https://www.npmjs.com/package/dsh-herdr)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node](https://img.shields.io/node/v/dsh-herdr)](package.json)
 
@@ -67,26 +66,28 @@ The dependency rule is one-way: `tools → services → ports ← adapters`. The
 
 The `desktop` profile is owned by the Electron app, so install it from **Plugins** (not `dsh plugin`):
 
-1. `dsh-herdr@0.1.0` from npm (or a local `file:` / `link:` spec while developing).
-2. Confirm `dsh.profile.bundles` contains `dsh-herdr`.
-3. Start a new session; `herdr_*` tools should be listed.
+1. Build the tarball (or download the release asset):
+
+   ```bash
+   pnpm install && pnpm build && pnpm pack
+   ```
+
+2. Install the resulting `dsh-herdr-0.1.0.tgz` (or a `link:/path/to/checkout` spec while developing).
+3. Confirm `dsh.profile.bundles` contains `dsh-herdr`.
+4. Start a new session; `herdr_*` tools should be listed.
+
+`dsh-herdr` is published to npm with each tagged release. If the npm version is not live yet, use the tarball or a checkout.
 
 ### Into a CLI profile
 
 ```bash
+# from a checkout
 dsh --profile herdr-dev --from-default-profile web --dump-config
-dsh plugin --profile herdr-dev add dsh-herdr
+dsh plugin --profile herdr-dev add file:$PWD
 dsh --profile herdr-dev --port 0 --no-open
-```
 
-### From a checkout
-
-```bash
-pnpm install
-pnpm build
-pnpm test
-pnpm pack
-# then install the generated dsh-herdr-0.1.0.tgz from the Plugins page
+# once published
+dsh plugin --profile herdr-dev add dsh-herdr
 ```
 
 Full instructions and the local-development loop: [docs/installation.md](docs/installation.md).

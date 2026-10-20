@@ -8,6 +8,7 @@ import { HerdrCli, mapHerdrCode, parseLastJson } from "../lib/adapters/herdr/cli
 import { HerdrCliTransport, normalizeAgent } from "../lib/adapters/herdr/transport.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const windows = process.platform === "win32";
 const fake = join(here, "fixtures", "fake-herdr.mjs");
 
 function withFake(fn) {
@@ -67,7 +68,7 @@ test("normalizeAgent maps the live snake_case shape", () => {
   assert.deepEqual(normalizeAgent(null), {});
 });
 
-test("HerdrCli probes the version and parses agent list JSON", async () => {
+test("HerdrCli probes the version and parses agent list JSON", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   await withFake(async ({ env }) => {
     const cli = new HerdrCli(fake, env);
     const probe = await cli.probe();
@@ -80,7 +81,7 @@ test("HerdrCli probes the version and parses agent list JSON", async () => {
   });
 });
 
-test("HerdrCli reads the kind list from the non-zero `herdr agent` help", async () => {
+test("HerdrCli reads the kind list from the non-zero `herdr agent` help", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   await withFake(async ({ env }) => {
     const transport = new HerdrCliTransport(new HerdrCli(fake, env));
     assert.deepEqual(await transport.kinds(), ["pi", "agy", "claude"]);

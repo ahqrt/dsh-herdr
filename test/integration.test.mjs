@@ -24,6 +24,7 @@ import { DoctorService } from "../lib/services/doctor.js";
 import { HerdrError } from "../lib/domain/errors.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const windows = process.platform === "win32";
 const fake = join(here, "fixtures", "fake-herdr.mjs");
 
 function git(cwd, ...args) {
@@ -103,7 +104,7 @@ function cleanup(root) {
   rmSync(root, { recursive: true, force: true });
 }
 
-test("spawn → exact harvest → diff → message → interrupt → close", async () => {
+test("spawn → exact harvest → diff → message → interrupt → close", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     const result = await ctx.spawn.spawn({
@@ -170,7 +171,7 @@ test("spawn → exact harvest → diff → message → interrupt → close", asy
   }
 });
 
-test("a clientTaskId makes a retried spawn idempotent", async () => {
+test("a clientTaskId makes a retried spawn idempotent", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     const args = {
@@ -189,7 +190,7 @@ test("a clientTaskId makes a retried spawn idempotent", async () => {
   }
 });
 
-test("the concurrency cap refuses a second live spawn", async () => {
+test("the concurrency cap refuses a second live spawn", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     await ctx.store.put({
@@ -222,7 +223,7 @@ test("the concurrency cap refuses a second live spawn", async () => {
   }
 });
 
-test("cwd outside allowCwd is refused before a pane exists", async () => {
+test("cwd outside allowCwd is refused before a pane exists", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     const outside = mkdtempSync(join(tmpdir(), "herdr-outside-"));
@@ -241,7 +242,7 @@ test("cwd outside allowCwd is refused before a pane exists", async () => {
   }
 });
 
-test("a kind that refuses model fails before a pane exists", async () => {
+test("a kind that refuses model fails before a pane exists", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     await assert.rejects(
@@ -259,7 +260,7 @@ test("a kind that refuses model fails before a pane exists", async () => {
   }
 });
 
-test("doctor reports a healthy fake environment", async () => {
+test("doctor reports a healthy fake environment", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     const report = await ctx.doctor.run();
@@ -272,7 +273,7 @@ test("doctor reports a healthy fake environment", async () => {
   }
 });
 
-test("closing an unowned handle is refused", async () => {
+test("closing an unowned handle is refused", { skip: windows && "fake herdr needs a POSIX shebang" }, async () => {
   const ctx = setup();
   try {
     await assert.rejects(

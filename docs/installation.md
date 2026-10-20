@@ -16,9 +16,9 @@
 The Electron app owns its profile; `dsh plugin --profile desktop …` is rejected by design.
 
 1. Build or fetch the package:
-   - npm: `dsh-herdr@0.1.0`
-   - local: `pnpm pack` → `dsh-herdr-0.1.0.tgz`
+   - tarball: `pnpm pack` → `dsh-herdr-0.1.0.tgz` (or the release asset)
    - link: the absolute checkout path
+   - npm: `dsh-herdr@0.1.0`, once the first tagged release is published
 2. Open **Plugins** in the app sidebar → install.
 3. Verify `package.json` in `~/.dsh/profiles/desktop/` lists `dsh-herdr` under `dependencies` **and** `dsh.profile.bundles`.
 4. The patch row appears in the composed profile:
@@ -42,9 +42,7 @@ Remove the plugin from the Plugins page. This removes the bundle layer and the d
 # 1. create a profile from the web template
 dsh --profile herdr-dev --from-default-profile web --dump-config
 
-# 2. install from npm …
-dsh plugin --profile herdr-dev add dsh-herdr
-# … or from a checkout
+# 2. install from a checkout (or `add dsh-herdr` once published)
 dsh plugin --profile herdr-dev add file:/absolute/path/to/dsh-herdr
 
 # 3. run on a throwaway port
