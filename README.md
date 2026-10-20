@@ -90,7 +90,7 @@ dsh --profile herdr-dev --port 0 --no-open
 dsh plugin --profile herdr-dev add dsh-herdr
 ```
 
-Full instructions and the local-development loop: [docs/installation.md](docs/installation.md).
+Full instructions, the skill install, and the local-development loop: [docs/installation.md](docs/installation.md).
 
 ---
 

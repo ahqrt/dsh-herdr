@@ -64,6 +64,17 @@ pnpm pack
 
 The tarball contains `lib/`, `cordis.patch.yml`, `skill/`, `schema/`, and the docs needed at install time. `lib/` is generated; commit it only if you publish from git tags without a build step (the release workflow builds).
 
+## Optional: install the delegation skill
+
+The package ships a DSH skill that teaches the review loop and the alias rules. The tools already encode the policy in their descriptions; the skill reinforces it across sessions.
+
+```bash
+# adjust the profile name if you installed elsewhere
+ln -s ~/.dsh/profiles/desktop/node_modules/dsh-herdr/skill ~/.agents/skills/herdr-delegation
+```
+
+The skill appears in a new session's skill list as `herdr-delegation`.
+
 ## Verifying the install
 
 ```text
