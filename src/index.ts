@@ -15,6 +15,9 @@ import { TopologyService } from "./services/topology.js";
 import { HarvestService } from "./services/harvest.js";
 import { SpawnService } from "./services/spawn.js";
 import { MessageService } from "./services/message.js";
+import { InboxService } from "./services/inbox.js";
+import { TranscriptService } from "./services/transcript.js";
+import { WorktreeService } from "./services/worktree.js";
 import { LifecycleService } from "./services/lifecycle.js";
 import { DoctorService } from "./services/doctor.js";
 import { createTools, TOOL_NAMES } from "./tools/index.js";
@@ -43,6 +46,7 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
   const git = new LocalGit();
 
   const topology = new TopologyService({ transport, store, config, env: process.env });
+  const worktree = new WorktreeService({ git, config, paths });
   const harvest = new HarvestService({ transport, git, config });
   const spawn = new SpawnService({
     transport,
@@ -50,6 +54,7 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
     git,
     topology,
     harvest,
+    worktree,
     config,
     paths,
     audit,
@@ -57,7 +62,9 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
     ids: systemIds,
   });
   const message = new MessageService({ transport, store, audit });
-  const lifecycle = new LifecycleService({ transport, store, audit });
+  const inbox = new InboxService({ store });
+  const transcript = new TranscriptService(store);
+  const lifecycle = new LifecycleService({ transport, store, audit, worktree });
   const doctor = new DoctorService({ transport, config, paths, env: process.env });
 
   const deps = {
@@ -68,6 +75,8 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
     spawn,
     harvest,
     message,
+    inbox,
+    transcript,
     lifecycle,
     doctor,
     ctx,

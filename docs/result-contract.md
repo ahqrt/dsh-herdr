@@ -45,6 +45,7 @@ Every delegation resolves to one `AgentResult` object (`schemaVersion: 1`). The 
   },
   "tests": "npm test (42 passed)",
   "files": ["src/http.ts", "src/http.test.ts"],
+  "worktree": { "path": "/Users/me/.dsh/herdr/worktrees/api-tmg3k2a1b2c3", "branch": "dsh/tmg3k2a1b2c3", "repo": "/Users/me/code/api", "base": "HEAD" },
   "usage": { "assistant": 3, "toolCalls": 12, "outputTokens": 4800 },
   "timing": { "createdAt": 1760000000000, "promptedAt": 1760000000500, "settledAt": 1760000042000, "elapsedMs": 42000 },
   "nextAction": "none"
@@ -64,6 +65,8 @@ Every delegation resolves to one `AgentResult` object (`schemaVersion: 1`). The 
 | `result.meta` | The four frontmatter keys; unknown keys are ignored. |
 | `diff.baselineHead` | The commit recorded at spawn. `git diff <head>` includes committed and working-tree changes. |
 | `diff.dirtyAtStart` | Porcelain lines that already existed at spawn; subtract them when blaming the child. |
+| `worktree` | Present for `isolated:true`: path, branch, source repo, base. The diff is against this worktree. |
+| `timing.queuedMs` | Time spent waiting for a concurrency slot before the task started. |
 | `usage` | Recovered from pi assistant messages (`output` tokens + `toolCall` blocks). |
 | `nextAction` | `none` (done), `wait` (running), `answer` (blocked), `inspect` (failed/gone/interrupted). |
 | `warnings` | Honest caveats: stale session, empty harvest, reviewer changed files. |

@@ -83,6 +83,7 @@ export interface TaskRecord {
   createdAt: number;
   updatedAt: number;
   promptedAt?: number;
+  queuedMs?: number;
   settledAt?: number;
   paneId?: string;
   tabId?: string;
@@ -91,6 +92,10 @@ export interface TaskRecord {
   baseline?: GitBaseline;
   /** Caller-supplied idempotency key. */
   clientTaskId?: string;
+  /** Number of inbox.ndjson lines already consumed. */
+  inboxOffset?: number;
+  /** Created when the spawn asked for isolated:true. */
+  worktree?: WorktreeInfo;
   /** A pane we did not spawn (read-only observation). */
   external?: boolean;
   error?: string;
@@ -98,6 +103,14 @@ export interface TaskRecord {
 }
 
 /** The workspace DSH reuses per repository. */
+/** An isolated git worktree created for one task. */
+export interface WorktreeInfo {
+  path: string;
+  branch: string;
+  repo: string;
+  base?: string;
+}
+
 export interface WorkspaceRecord {
   workspaceId: string;
   rootPaneId?: string;
@@ -123,6 +136,8 @@ export interface AgentResult {
   herdrStatus?: HerdrAgentStatus;
   /** pi session JSONL, when the kind exposes one. */
   sessionPath?: string;
+  /** Present for isolated spawns; the diff is against this worktree. */
+  worktree?: WorktreeInfo;
   summary: string;
   finalMessage?: string;
   result?: {
@@ -149,6 +164,7 @@ export interface AgentResult {
     promptedAt?: number;
     settledAt?: number;
     elapsedMs: number;
+    queuedMs?: number;
   };
   nextAction: "none" | "wait" | "answer" | "inspect";
 }
@@ -166,6 +182,7 @@ export interface SpawnInput {
   timeoutMs?: number;
   agentArgs?: string[];
   clientTaskId?: string;
+  isolated?: boolean;
   sessionId?: string;
   signal?: AbortSignal;
 }

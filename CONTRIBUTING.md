@@ -41,8 +41,10 @@ A successful boot means the DSH schema compiler accepted every tool and paramete
 |---|---|
 | A new tool | `src/tools/*`, `src/tools/index.ts`, `src/tools/shared.ts` renderer, `test/tools.test.mjs` |
 | A new service use case | `src/services/*`, a unit test with `MemoryTaskStore` + a fake transport |
+| Worktree / isolation behavior | `src/services/worktree.ts`, `GitService`, an integration test in a temp repo |
 | A new Herdr call/response shape | `src/ports/transport.ts` then `src/adapters/herdr/transport.ts` |
 | A new kind with native flags | `src/domain/launch.ts` (`kindCaps`, `buildAgentArgs`) + tests |
+| A new message type | `src/domain/inbox.ts`, the envelope in `src/domain/prompt.ts`, a parse test |
 | A new result field | `src/domain/types.ts`, harvest, renderer, `docs/result-contract.md`, `schema/agent-result.schema.json` |
 | A new error | `src/domain/errors.ts`, `docs/troubleshooting.md`, a test |
 

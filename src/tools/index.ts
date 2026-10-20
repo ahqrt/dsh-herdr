@@ -7,6 +7,8 @@ import { createMessageTool } from "./message.js";
 import { createListTool } from "./list.js";
 import { createCloseTool, createInterruptTool } from "./close.js";
 import { createDoctorTool } from "./doctor.js";
+import { createInboxTool } from "./inbox.js";
+import { createTranscriptTool } from "./transcript.js";
 
 export function createTools(deps: ToolFactoryDeps, defineTool: DefineTool): unknown[] {
   const options = { defineTool, deps };
@@ -17,6 +19,8 @@ export function createTools(deps: ToolFactoryDeps, defineTool: DefineTool): unkn
     createListTool(options),
     createCloseTool(options),
     createInterruptTool(options),
+    createInboxTool(options),
+    createTranscriptTool(options),
     createDoctorTool(options),
   ];
 }
@@ -28,5 +32,7 @@ export const TOOL_NAMES = [
   "herdr_list_agents",
   "herdr_close_agent",
   "herdr_interrupt_agent",
+  "herdr_inbox",
+  "herdr_read_agent",
   "herdr_doctor",
 ] as const;

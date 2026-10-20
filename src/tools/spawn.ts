@@ -65,6 +65,11 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
         description:
           "Optional idempotency key. A repeated call with the same key returns the existing task instead of spawning again.",
       },
+      isolated: {
+        type: "boolean",
+        description:
+          "Run in a fresh git worktree (branch dsh/<taskId>) instead of the current checkout. The worktree path is returned; nothing is merged automatically.",
+      },
     },
     output: {
       schema: {
@@ -99,6 +104,7 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
           ? args.agent_args.filter((value): value is string => typeof value === "string")
           : undefined,
         clientTaskId: typeof args.client_task_id === "string" ? args.client_task_id : undefined,
+        isolated: args.isolated === true,
         sessionId: exec.agent?.session?.id,
         signal: exec.signal,
       });
@@ -112,6 +118,7 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
         model: args.model,
         kind: args.kind,
         cwd: args.cwd,
+        isolated: args.isolated,
       },
     }),
   });

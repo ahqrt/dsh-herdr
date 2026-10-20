@@ -1,6 +1,6 @@
 # Tools
 
-Seven tools, one protocol. Names are stable; breaking a parameter or a result field is a semver-major change.
+Nine tools, one protocol. Names are stable; breaking a parameter or a result field is a semver-major change.
 
 | Tool | One line |
 |---|---|
@@ -9,6 +9,8 @@ Seven tools, one protocol. Names are stable; breaking a parameter or a result fi
 | [`herdr_message_agent`](#herdr_message_agent) | Send a follow-up, findings, or an answer. |
 | [`herdr_list_agents`](#herdr_list_agents) | Fleet view. |
 | [`herdr_interrupt_agent`](#herdr_interrupt_agent) | Cancel the current turn. |
+| [`herdr_inbox`](#herdr_inbox) | Read child → DSH messages, optionally long-poll. |
+| [`herdr_read_agent`](#herdr_read_agent) | Page through a pi transcript. |
 | [`herdr_close_agent`](#herdr_close_agent) | Close an owned pane. |
 | [`herdr_doctor`](#herdr_doctor) | Environment self-check. |
 
@@ -33,10 +35,11 @@ Starts a pane, starts an agent, submits a task envelope, waits for a settled sta
 | `timeout_ms` | number | `900000` | Clamped to `10s..1h`. A timeout returns `running`. |
 | `agent_args` | string[] | — | Raw flags after `--`, for kinds without first-class support. |
 | `client_task_id` | string | — | Idempotency key; a repeat returns the existing task. |
+| `isolated` | boolean | `false` | Run in a fresh git worktree (`dsh/<taskId>`); the path is returned. |
 
 **Behavior**
 
-1. Gates: `enabled`, cwd exists and is allowed, concurrency cap.
+1. Gates: `enabled`, cwd exists and is allowed. Over the concurrency cap, it waits up to `queueTimeoutMs` for a slot (a refusal names the wait).
 2. Resolves the model alias and validates the kind's capabilities (agy refuses `--model`).
 3. Creates the task record **before** the pane, so a crash leaves an inspectable record.
 4. Topology: dedicated workspace + one tab per task (GUI), or a sibling split (inside Herdr).
@@ -99,8 +102,37 @@ Sends Escape to the agent's pane. The pane, session file, and record remain; the
 |---|---|---|
 | `target` | string, **required** | — |
 | `force` | boolean | `false` |
+| `remove_worktree` | boolean | `false` |
 
-Refuses unowned panes, and refuses a working agent unless `force:true`. The pi session file survives; the transcript is not lost.
+Refuses unowned panes, and refuses a working agent unless `force:true`. The pi session file survives; the transcript is not lost. With `remove_worktree:true` an isolated task's worktree is removed first (dirty worktrees need `force:true`).
+
+## `herdr_inbox`
+
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `target` | string | all open tasks | Task id, agent name, or pane id. |
+| `wait` | boolean | `false` | Long-poll until a message arrives. |
+| `timeout_ms` | number | `30000` | Wait budget. |
+| `consume` | boolean | `true` | Advance the read offset; `false` peeks. |
+| `limit` | number | `50` | Max messages (200 cap). |
+
+Reads `<artifactDir>/inbox.ndjson`. The task envelope asks the child to append one JSON object per message:
+
+```json
+{"ts":"2026-10-20T09:00:00Z","type":"REVIEW_REQUEST","text":"please check src/a.ts"}
+```
+
+Types: `BLOCKED`, `REVIEW_REQUEST`, `COMPLETE`, `NOTE`, `ACCEPT`, `REJECT`; unknown types are returned as `NOTE`. Offsets live in the task record, so consumed messages are never replayed.
+
+## `herdr_read_agent`
+
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `target` | string, **required** | — | Task id, agent name, or pane id. |
+| `from` | number | `0` | First turn index. |
+| `limit` | number | `20` | Turns per page (100 cap). |
+
+Only `kind=pi` exposes a session transcript. The result includes `total` and `nextFrom`; each message has `role`, `text`, and the `toolCalls` that turn made. Messages are truncated at 6,000 characters; page instead of requesting everything.
 
 ## `herdr_doctor`
 

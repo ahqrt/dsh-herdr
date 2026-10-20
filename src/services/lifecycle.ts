@@ -4,16 +4,19 @@ import { HerdrError } from "../domain/errors.js";
 import type { AgentInfo, TaskRecord } from "../domain/types.js";
 import type { AuditLog, TaskStore } from "../ports/store.js";
 import type { HerdrTransport } from "../ports/transport.js";
+import type { WorktreeService } from "./worktree.js";
 
 export interface LifecycleDeps {
   transport: HerdrTransport;
   store: TaskStore;
   audit: AuditLog;
+  worktree: WorktreeService;
 }
 
 export interface CloseInput {
   target: string;
   force?: boolean;
+  removeWorktree?: boolean;
   signal?: AbortSignal;
 }
 
@@ -64,11 +67,16 @@ export class LifecycleService {
       );
     }
 
+    if (input.removeWorktree && record.worktree) {
+      await this.deps.worktree.remove(record.worktree, input.force === true);
+    }
+
     await transport.closePane(record.paneId, input.signal);
     await store.update(record.taskId, {
       status: "closed",
       closedAt: Date.now(),
       updatedAt: Date.now(),
+      ...(input.removeWorktree && record.worktree ? { worktree: undefined } : {}),
     });
     audit.write({
       event: "close",

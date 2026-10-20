@@ -6,6 +6,8 @@ export interface PluginConfig {
     defaultModel: string;
     aliasesFile: string;
     maxParallelAgents: number;
+    queueTimeoutMs: number;
+    maxQueuedAgents: number;
     defaultTimeoutMs: number;
     startTimeoutMs: number;
     maxResultChars: number;
@@ -15,6 +17,7 @@ export interface PluginConfig {
     workspaceLabel: string;
     homeDir: string;
     artifactsRoot: string;
+    worktreesRoot: string;
     stateFile: string;
     auditFile: string;
     allowCwd: string[];

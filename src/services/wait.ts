@@ -34,7 +34,6 @@ export async function waitForSettle(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolveSleep) => {
-    const timer = setTimeout(resolveSleep, ms);
-    timer.unref?.();
+    setTimeout(resolveSleep, ms);
   });
 }

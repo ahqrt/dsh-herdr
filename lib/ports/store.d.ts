@@ -31,5 +31,16 @@ export interface GitService {
     baseline(cwd: string): Promise<import("../domain/types.js").GitBaseline | undefined>;
     diff(input: GitDiffInput): Promise<import("../domain/types.js").DiffEvidence | undefined>;
     status(cwd: string): Promise<string[]>;
+    createWorktree(input: {
+        repoCwd: string;
+        path: string;
+        branch: string;
+        base?: string;
+    }): Promise<void>;
+    removeWorktree(input: {
+        repoCwd: string;
+        path: string;
+        force?: boolean;
+    }): Promise<void>;
 }
 //# sourceMappingURL=store.d.ts.map

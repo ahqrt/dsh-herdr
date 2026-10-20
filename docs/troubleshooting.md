@@ -14,10 +14,11 @@ Start with `herdr_doctor`. Its `FAIL` lines name the fix. Everything below assum
 | `AGENT_BLOCKED` | Target is waiting at an approval/question | Ask the user, then `herdr_message_agent`. |
 | `AGENT_STALLED` | Prompt was written but no turn started (after one retry) | Inspect the pane; the text may have been lost. Do not blind-resend. |
 | `SPAWN_REFUSED` | `enabled:false`, boot failure, or start rejection | Read the message; fix config or inspect the new tab. |
-| `CONCURRENCY_LIMIT` | `maxParallelAgents` reached | Close a finished agent or raise the cap. |
+| `CONCURRENCY_LIMIT` | `maxParallelAgents` reached and the queue wait expired | Close a finished agent, raise `queueTimeoutMs`, or raise the cap. |
 | `CWD_NOT_ALLOWED` | `cwd` outside `allowCwd` | Add the directory deliberately. |
 | `TASK_NOT_FOUND` | Handle matches no record and no live agent | `herdr_list_agents`. |
 | `TASK_NOT_OWNED` | Refused to mutate a pane the plugin did not create | Use the Herdr UI, or spawn through the plugin. |
+| `NO_TRANSCRIPT` | The kind has no pi session file | Only kind=pi has a transcript; use `herdr_get_agent_result` for pane text. |
 | `VALIDATION_ERROR` | Bad argument, unsupported flag, unresolved alias | Read the `fix:` line; aliases come from `model-aliases.md`. |
 | `TIMEOUT` | CLI call or wait budget expired | A timed-out delegation is still alive; call `herdr_get_agent_result(wait:true)`. |
 | `ABORTED` | The tool call was cancelled | The plugin sends Escape to an owned agent; check its status. |
@@ -60,6 +61,16 @@ Use the exact `provider/model` from the output, or add a row to `~/.pi/agent/mod
 ## Symptom: agy refuses model
 
 `kind=agy` rejects `model` and `thinking` (its CLI does). Omit them; pass agy's own flags through `agent_args`.
+
+## Symptom: worktree creation fails
+
+- `cwd` is not a git repo, or the repo has no commit (`HEAD` missing).
+- The branch `dsh/<taskId>` already exists (rare; task ids are unique).
+- An uncommitted checkout is fine, but its changes are **not** copied into the worktree — commit first if you need them there.
+
+## Symptom: inbox is always empty
+
+The child only writes messages if the envelope is followed. Check `<taskDir>/inbox.ndjson` and the `warnings` in the result. A child that finishes without reporting still has a valid final message; the inbox is an additional channel, not the only one.
 
 ## Symptom: panes pile up
 

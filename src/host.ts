@@ -48,6 +48,8 @@ export interface ToolFactoryDeps {
   spawn: import("./services/spawn.js").SpawnService;
   harvest: import("./services/harvest.js").HarvestService;
   message: import("./services/message.js").MessageService;
+  inbox: import("./services/inbox.js").InboxService;
+  transcript: import("./services/transcript.js").TranscriptService;
   lifecycle: import("./services/lifecycle.js").LifecycleService;
   doctor: import("./services/doctor.js").DoctorService;
   ctx: PluginContext;

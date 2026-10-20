@@ -3,18 +3,19 @@
 The 0.1 line is deliberately narrow: delegate, harvest, review. Everything else
 has a place below, roughly in order of value.
 
-## 0.2 — close the loop
+## 0.2 — close the loop (shipped in 0.2.0)
 
 - **Inbound inbox** (`herdr_inbox`): consume `<taskDir>/inbox.ndjson`, long-poll,
   and surface `COMPLETE / BLOCKED / REVIEW_REQUEST` without a synchronous wait.
-- **Push delivery**: wake an idle DSH session when a child settles, if the host
-  exposes a stable injection API. Until then: inbox + desktop notification.
-- **Queue** above `maxParallelAgents`: FIFO with a drain loop, so a batch of
-  spawns does not fail on the cap.
-- **Per-task worktree** (`isolated: true`): `herdr worktree create`, run there,
-  return the worktree path; merging stays a human decision.
+- **Queue** above `maxParallelAgents`: wait for a slot (`queueTimeoutMs`), report
+  `queuedMs`, and fail only when the wait expires.
+- **Per-task worktree** (`isolated: true`): a fresh `git worktree` on
+  `dsh/<taskId>`; the path is returned and cleanup is explicit.
 - **`herdr_read_agent`**: transcript paging for long answers, instead of only the
   truncated `finalMessage`.
+- **Push delivery** *(still open)*: wake an idle DSH session when a child
+  settles. Blocked on a stable host injection API; the inbox long-poll is the
+  current answer.
 
 ## 0.3 — transports and hosts
 

@@ -17,7 +17,12 @@ export function createCloseTool({ defineTool, deps }: ToolFactoryOptions) {
       target: { type: "string", required: true, description: "Task id, agent name, or pane id." },
       force: {
         type: "boolean",
-        description: "Close even while the agent is working (default false).",
+        description:
+          "Close even while the agent is working, and force-remove a dirty worktree (default false).",
+      },
+      remove_worktree: {
+        type: "boolean",
+        description: "Also remove the isolated worktree created for this task (default false).",
       },
     },
     output: {
@@ -35,6 +40,7 @@ export function createCloseTool({ defineTool, deps }: ToolFactoryOptions) {
       deps.lifecycle.close({
         target: String(args.target ?? ""),
         force: args.force === true,
+        removeWorktree: args.remove_worktree === true,
         signal: exec.signal,
       }),
     ),

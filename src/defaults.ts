@@ -9,6 +9,8 @@ export interface PluginConfig {
   defaultModel: string;
   aliasesFile: string;
   maxParallelAgents: number;
+  queueTimeoutMs: number;
+  maxQueuedAgents: number;
   defaultTimeoutMs: number;
   startTimeoutMs: number;
   maxResultChars: number;
@@ -18,6 +20,7 @@ export interface PluginConfig {
   workspaceLabel: string;
   homeDir: string;
   artifactsRoot: string;
+  worktreesRoot: string;
   stateFile: string;
   auditFile: string;
   allowCwd: string[];
@@ -30,6 +33,8 @@ export const DEFAULT_CONFIG: PluginConfig = {
   defaultModel: "flash",
   aliasesFile: "~/.pi/agent/model-aliases.md",
   maxParallelAgents: 3,
+  queueTimeoutMs: 300_000,
+  maxQueuedAgents: 10,
   defaultTimeoutMs: 900_000,
   startTimeoutMs: 60_000,
   maxResultChars: 40_000,
@@ -39,6 +44,7 @@ export const DEFAULT_CONFIG: PluginConfig = {
   workspaceLabel: "DSH · {repo}",
   homeDir: "~/.dsh/herdr",
   artifactsRoot: "tasks",
+  worktreesRoot: "worktrees",
   stateFile: "state.json",
   auditFile: "audit.ndjson",
   allowCwd: [],
@@ -71,6 +77,8 @@ export function resolveConfig(raw: unknown): PluginConfig {
   if (!["right", "down"].includes(merged.splitDirection)) merged.splitDirection = "right";
 
   merged.maxParallelAgents = clampInteger(merged.maxParallelAgents, 1, 32, 3);
+  merged.queueTimeoutMs = clampInteger(merged.queueTimeoutMs, 0, 1_800_000, 300_000);
+  merged.maxQueuedAgents = clampInteger(merged.maxQueuedAgents, 0, 64, 10);
   merged.defaultTimeoutMs = clampInteger(merged.defaultTimeoutMs, 10_000, 3_600_000, 900_000);
   merged.startTimeoutMs = clampInteger(merged.startTimeoutMs, 5_000, 300_000, 60_000);
   merged.maxResultChars = clampInteger(merged.maxResultChars, 1_000, 400_000, 40_000);

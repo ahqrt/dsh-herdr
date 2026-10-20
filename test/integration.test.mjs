@@ -4,7 +4,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +29,9 @@ import { SpawnService } from "../lib/services/spawn.js";
 import { MessageService } from "../lib/services/message.js";
 import { LifecycleService } from "../lib/services/lifecycle.js";
 import { DoctorService } from "../lib/services/doctor.js";
+import { InboxService } from "../lib/services/inbox.js";
+import { TranscriptService } from "../lib/services/transcript.js";
+import { WorktreeService } from "../lib/services/worktree.js";
 import { HerdrError } from "../lib/domain/errors.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -67,6 +78,7 @@ function setup() {
   const audit = new FileAuditLog(paths.auditFile);
   const gitService = new LocalGit();
   const topology = new TopologyService({ transport, store, config, env: {} });
+  const worktree = new WorktreeService({ git: gitService, config, paths });
   const harvest = new HarvestService({ transport, git: gitService, config });
   const spawn = new SpawnService({
     transport,
@@ -74,6 +86,7 @@ function setup() {
     git: gitService,
     topology,
     harvest,
+    worktree,
     config,
     paths,
     audit,
@@ -81,8 +94,10 @@ function setup() {
     ids: systemIds,
   });
   const message = new MessageService({ transport, store, audit });
-  const lifecycle = new LifecycleService({ transport, store, audit });
+  const lifecycle = new LifecycleService({ transport, store, audit, worktree });
   const doctor = new DoctorService({ transport, config, paths, env: {} });
+  const inbox = new InboxService({ store });
+  const transcript = new TranscriptService(store);
 
   return {
     root,
@@ -96,6 +111,9 @@ function setup() {
     message,
     lifecycle,
     doctor,
+    inbox,
+    transcript,
+    worktree,
     transport,
   };
 }
@@ -175,6 +193,193 @@ test("spawn → exact harvest → diff → message → interrupt → close", {
   }
 });
 
+test("inbox messages are consumable, peekable, and long-polled", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    const result = await ctx.spawn.spawn({
+      prompt: "write an inbox message",
+      cwd: ctx.repo,
+      kind: "pi",
+      model: "flash",
+    });
+
+    const first = await ctx.inbox.read({ target: result.taskId });
+    assert.equal(first.messages.length, 1);
+    assert.equal(first.messages[0].type, "REVIEW_REQUEST");
+    assert.equal(first.messages[0].taskId, result.taskId);
+
+    const again = await ctx.inbox.read({ target: result.taskId });
+    assert.equal(again.messages.length, 0);
+
+    const peek = await ctx.inbox.read({ target: result.taskId, consume: false });
+    assert.equal(peek.messages.length, 0);
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
+test("inbox wait long-polls until a message arrives", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    const taskId = "t-poll";
+    const artifactDir = join(ctx.paths.artifactsRoot, taskId);
+    mkdirSync(artifactDir, { recursive: true });
+    await ctx.store.put({
+      schemaVersion: 1,
+      taskId,
+      name: "poller",
+      kind: "pi",
+      cwd: ctx.repo,
+      artifactDir,
+      role: "worker",
+      status: "working",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    setTimeout(() => {
+      writeFileSync(
+        join(artifactDir, "inbox.ndjson"),
+        `${JSON.stringify({ type: "BLOCKED", text: "allow network?" })}\n`,
+        "utf8",
+      );
+    }, 250);
+
+    const read = await ctx.inbox.read({ target: taskId, wait: true, timeoutMs: 3000 });
+    assert.equal(read.messages.length, 1);
+    assert.equal(read.messages[0].type, "BLOCKED");
+    assert.ok(read.waitedMs >= 200);
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
+test("transcript paging reads the child session", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    const result = await ctx.spawn.spawn({
+      prompt: "answer in two turns",
+      cwd: ctx.repo,
+      kind: "pi",
+      model: "flash",
+    });
+    const page = await ctx.transcript.read({ target: result.taskId, from: 0, limit: 20 });
+    assert.equal(page.total, 2);
+    assert.equal(page.messages[0].role, "user");
+    assert.match(page.messages[1].text, /COMPLETE/);
+
+    const second = await ctx.transcript.read({ target: result.taskId, from: 1, limit: 1 });
+    assert.equal(second.messages.length, 1);
+    assert.equal(second.messages[0].index, 1);
+    assert.equal(second.nextFrom, undefined);
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
+test("the spawn queue waits for a slot instead of failing immediately", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    await ctx.store.put({
+      schemaVersion: 1,
+      taskId: "held",
+      name: "worker-held",
+      kind: "pi",
+      cwd: ctx.repo,
+      artifactDir: join(ctx.paths.artifactsRoot, "held"),
+      role: "worker",
+      status: "working",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    ctx.config.maxParallelAgents = 1;
+    ctx.config.queueTimeoutMs = 5_000;
+    setTimeout(() => {
+      void ctx.store.update("held", { status: "completed" });
+    }, 300);
+
+    const result = await ctx.spawn.spawn({
+      prompt: "queued work",
+      cwd: ctx.repo,
+      kind: "pi",
+      model: "flash",
+    });
+    assert.equal(result.status, "completed");
+    assert.ok(result.timing.queuedMs >= 500);
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
+test("the queue times out with a useful message", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    await ctx.store.put({
+      schemaVersion: 1,
+      taskId: "held",
+      name: "worker-held",
+      kind: "pi",
+      cwd: ctx.repo,
+      artifactDir: join(ctx.paths.artifactsRoot, "held"),
+      role: "worker",
+      status: "working",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    ctx.config.maxParallelAgents = 1;
+    ctx.config.queueTimeoutMs = 200;
+
+    await assert.rejects(ctx.spawn.spawn({ prompt: "x", cwd: ctx.repo, kind: "pi" }), (error) => {
+      assert.ok(error instanceof HerdrError);
+      assert.equal(error.code, "CONCURRENCY_LIMIT");
+      assert.match(error.message, /after waiting/);
+      return true;
+    });
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
+test("isolated spawn runs in a fresh worktree and close can remove it", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    const result = await ctx.spawn.spawn({
+      prompt: "work in isolation",
+      cwd: ctx.repo,
+      kind: "pi",
+      model: "flash",
+      isolated: true,
+    });
+    assert.ok(result.worktree);
+    assert.ok(existsSync(result.worktree.path));
+    assert.equal(result.worktree.branch, `dsh/${result.taskId}`);
+    const branch = execFileSync(
+      "git",
+      ["-C", result.worktree.path, "rev-parse", "--abbrev-ref", "HEAD"],
+      {
+        encoding: "utf8",
+      },
+    ).trim();
+    assert.equal(branch, `dsh/${result.taskId}`);
+
+    await ctx.lifecycle.close({ target: result.taskId, removeWorktree: true });
+    assert.equal(existsSync(result.worktree.path), false);
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
 test("a clientTaskId makes a retried spawn idempotent", {
   skip: windows && "fake herdr needs a POSIX shebang",
 }, async () => {
@@ -214,6 +419,7 @@ test("the concurrency cap refuses a second live spawn", {
       updatedAt: Date.now(),
     });
     ctx.config.maxParallelAgents = 1;
+    ctx.config.queueTimeoutMs = 200;
     const result = ctx.spawn.spawn({
       prompt: "x",
       cwd: ctx.repo,

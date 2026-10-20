@@ -73,6 +73,8 @@ Consequences:
 | `src/domain/prompt.ts` | Task envelope, agent-message envelope, review findings. |
 | `src/domain/result-md.ts` | `result.md` frontmatter parser. |
 | `src/domain/session.ts` | pi session JSONL parsing and exact final-message extraction. |
+| `src/domain/inbox.ts` | `inbox.ndjson` parsing, message types, line offsets. |
+| `src/domain/transcript.ts` | Session JSONL → paged user/assistant turns. |
 | `src/domain/aliases.ts` | `model-aliases.md` parsing and alias resolution. |
 | `src/domain/launch.ts` | Per-kind launch caps and argv. |
 | `src/domain/version.ts` | Herdr version parse and hard floor. |
@@ -84,7 +86,7 @@ Consequences:
 | `src/adapters/fs/store.ts` | Atomic, locked, versioned state file; rotating audit. |
 | `src/adapters/fs/memory-store.ts` | Test/embed store. |
 | `src/adapters/git/local.ts` | Baseline and bounded diff. |
-| `src/services/*` | Use cases. No I/O beyond their ports. |
+| `src/services/*` | Use cases (spawn, harvest, message, inbox, transcript, worktree, …). No I/O beyond their ports. |
 | `src/tools/*` | Parameter schemas, cwd resolution, model-facing rendering. |
 
 ## Spawn lifecycle
@@ -101,7 +103,7 @@ sequenceDiagram
 
   D->>T: prompt, kind, model, cwd
   T->>S: spawn(input)
-  S->>S: gates (enabled, cwd allowlist, concurrency)
+  S->>S: gates (enabled, cwd allowlist); wait for a slot (queue)
   S->>S: resolve alias → model/thinking; build argv
   S->>Store: put(record: starting)
   S->>Topo: ensurePane(cwd)
@@ -156,17 +158,26 @@ A pi session file is append-only across turns. Harvest only accepts its last ass
 ├── state.json          # schemaVersion 1, tasks + workspace map
 ├── state.json.lock     # advisory cross-process lock
 ├── audit.ndjson        # append-only events, rotates at 5 MB
-└── tasks/<taskId>/
-    ├── prompt.md       # the exact envelope sent
-    ├── result.md       # written by the child
-    ├── diff.patch      # baseline..harvest, bounded
-    └── inbox.ndjson    # child → DSH messages (reserved)
+├── tasks/<taskId>/
+│   ├── prompt.md       # the exact envelope sent
+│   ├── result.md       # written by the child
+│   ├── diff.patch      # baseline..harvest, bounded
+│   └── inbox.ndjson    # child → DSH messages
+└── worktrees/<repo>-<taskId>/   # isolated:true branches (dsh/<taskId>)
 ```
 
 - Writes are atomic (`tmp` + `rename`).
 - A cross-process lock (create-exclusive file with PID/timestamp, 15s stale) prevents two DSH processes from losing an update.
 - A corrupt state file is renamed to `state.json.corrupt-<ts>` and the registry starts empty; losing the registry is recoverable, refusing to start is not.
 - Nothing is written into the project checkout.
+
+### Mailbox offsets
+
+`inbox.ndjson` is append-only. Each task record stores `inboxOffset` (the next line index to read), so `herdr_inbox` is replay-free even across DSH restarts. Malformed lines are skipped and counted, never fatal.
+
+### Isolation
+
+`isolated:true` creates a git worktree from `HEAD` before the spawn; the task's `cwd`, baseline, diff, and prompt all use the worktree. The original checkout is untouched. The worktree is not merged or deleted automatically — `herdr_close_agent({remove_worktree:true})` removes it, and a dirty worktree requires `force:true`.
 
 ## Invariants
 

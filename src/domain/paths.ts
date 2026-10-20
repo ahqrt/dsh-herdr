@@ -10,6 +10,7 @@ export interface Paths {
   root: string;
   stateFile: string;
   artifactsRoot: string;
+  worktreesRoot: string;
   auditFile: string;
   aliasesFile: string;
 }
@@ -29,6 +30,7 @@ export function resolvePaths(config: Partial<PluginConfig>): Paths {
     root,
     stateFile: resolveUnder(root, merged.stateFile),
     artifactsRoot: resolveUnder(root, merged.artifactsRoot),
+    worktreesRoot: resolveUnder(root, merged.worktreesRoot),
     auditFile: resolveUnder(root, merged.auditFile),
     aliasesFile: expandHome(merged.aliasesFile),
   };

@@ -15,6 +15,7 @@ export type ErrorCode =
   | "CWD_NOT_ALLOWED"
   | "TASK_NOT_FOUND"
   | "TASK_NOT_OWNED"
+  | "NO_TRANSCRIPT"
   | "VALIDATION_ERROR"
   | "TIMEOUT"
   | "ABORTED"

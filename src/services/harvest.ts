@@ -143,6 +143,7 @@ export class HarvestService {
       },
       herdrStatus,
       sessionPath,
+      worktree: record.worktree,
       summary,
       finalMessage: finalMessage || undefined,
       result: resultPath ? { path: resultPath, text: resultText, meta } : undefined,
@@ -164,6 +165,7 @@ export class HarvestService {
         promptedAt: record.promptedAt,
         settledAt: record.settledAt,
         elapsedMs: Math.max(0, Date.now() - record.createdAt),
+        queuedMs: record.queuedMs,
       },
       nextAction: nextActionFor(status),
     };

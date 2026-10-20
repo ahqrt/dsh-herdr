@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.1.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 7 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 7 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.2.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
@@ -36,6 +36,10 @@ DSH 自带 subagent 跑在进程内，和主会话共用模型。有些场景你
 | **归属** | 插件只关闭/操作自己创建的 pane；用户自己开的 pane 只读。 |
 | **Blocked 不代答** | 子 agent 等审批时交给用户，插件绝不自动批准。 |
 | **可取消** | 发 Escape 中断当前 turn，pane 和 session 都保留。 |
+| **Inbox** | 子 agent 可以回报 `BLOCKED` / `REVIEW_REQUEST` / `COMPLETE`，`herdr_inbox` 消费，支持长轮询。 |
+| **队列** | 超过并发上限时等待空位（`queueTimeoutMs`），不是立刻失败。 |
+| **隔离** | `isolated: true` 在独立 git worktree 里跑，返回路径。 |
+| **Transcript** | `herdr_read_agent` 按 turn 翻 pi session，不只看最终答复。 |
 | **可诊断** | `herdr_doctor` 一次检查 binary、server、kinds、别名表、目录、拓扑、pi。 |
 
 ---
@@ -72,7 +76,7 @@ flowchart LR
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.1.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.2.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
@@ -121,11 +125,13 @@ DSH:  → herdr_message_agent({ target: "worker-flash-a1b2", kind: "REVIEW_FINDI
 
 | 工具 | 作用 |
 |---|---|
-| `herdr_spawn_agent` | 派一个子任务；`role=reviewer` 只读 review。 |
+| `herdr_spawn_agent` | 派一个子任务；`role=reviewer` 只读；`isolated:true` 用 worktree。 |
 | `herdr_get_agent_result` | 取结果；`wait:true` 阻塞到 settled。 |
 | `herdr_message_agent` | 跟进、回传 findings、回答 blocked 的 agent。 |
 | `herdr_list_agents` | 舰队视图：自己的和别人的 agent。 |
 | `herdr_interrupt_agent` | 中断当前 turn，保留 pane。 |
+| `herdr_inbox` | 读子 agent 消息；`wait:true` 长轮询。 |
+| `herdr_read_agent` | 按 turn 翻 pi transcript。 |
 | `herdr_close_agent` | 关闭自己起的 pane；session 文件保留。 |
 | `herdr_doctor` | 环境自检。 |
 

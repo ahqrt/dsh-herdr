@@ -6,6 +6,26 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
+### Added
+
+- `herdr_inbox`: consume child → DSH messages from `inbox.ndjson`, with a
+  long-poll `wait` and per-task read offsets (no replay).
+- `herdr_read_agent`: page through a pi session transcript, turn by turn, with
+  the tool calls each turn made.
+- Spawn queue: over the concurrency cap, a spawn waits up to `queueTimeoutMs`
+  for a slot instead of failing immediately; `queuedMs` is reported.
+- `isolated: true`: run a task in a fresh git worktree (`dsh/<taskId>`), return
+  its path, and optionally remove it on close (`remove_worktree: true`).
+- `timing.queuedMs` and `worktree` in the result contract.
+
+### Changed
+
+- `herdr_spawn_agent` no longer rejects at the cap; it queues. The error now
+  names the wait and the running agents.
+- `herdr_close_agent` accepts `remove_worktree`.
+
 ## [0.1.0] - 2026-10-20
 
 ### Added

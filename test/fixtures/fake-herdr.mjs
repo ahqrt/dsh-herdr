@@ -123,6 +123,15 @@ if (argv[0] === "agent" && argv[1] === "prompt") {
         "Fake detail body.",
       ].join("\n"),
     );
+    const inbox = `${dirname(resultPath)}/inbox.ndjson`;
+    appendFileSync(
+      inbox,
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        type: process.env.FAKE_HERDR_INBOX_TYPE || "REVIEW_REQUEST",
+        text: "fake review request",
+      }) + "\n",
+    );
   }
   if (sessionPath) {
     mkdirSync(dirname(sessionPath), { recursive: true });

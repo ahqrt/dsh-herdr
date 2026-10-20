@@ -8,7 +8,7 @@
 
 `dsh-herdr` is the reference bridge between [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) and [Herdr](https://herdr.dev). It turns Herdr into an external subagent runtime: DSH stays the orchestrator and reviewer, while pi / agy / claude / codex / … do the work in visible, steerable panes.
 
-> Status: `0.1.x`, validated on DSH `0.2.1-rc.2` (all seven tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`). The public surface is the seven `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
+> Status: `0.2.x`, validated on DSH `0.2.1-rc.2` (all nine tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`). The public surface is the nine `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -21,7 +21,7 @@ DSH subagents run in-process and share the harness model. Sometimes you want the
 - the **same panes** you already use when working by hand with Herdr + pi;
 - a result you can **verify** rather than trust — exact final message plus a git diff.
 
-`dsh-herdr` gives the DSH agent six verbs for that: delegate, fetch, message, list, interrupt, close.
+`dsh-herdr` gives the DSH agent a small vocabulary: delegate, fetch, message, list, interrupt, close, plus an inbox and a transcript pager.
 
 ---
 
@@ -36,6 +36,10 @@ DSH subagents run in-process and share the harness model. Sometimes you want the
 | **Ownership** | The plugin only closes/steers panes it created. User panes are read-only. |
 | **Blocked ≠ approved** | A blocked child is surfaced to the user, never auto-answered. |
 | **Cancellation** | Turn-level interrupt (Escape) without destroying the pane or session. |
+| **Inbox** | Children can report `BLOCKED` / `REVIEW_REQUEST` / `COMPLETE`; `herdr_inbox` consumes them, with a long-poll. |
+| **Queue** | Over the cap, a spawn waits for a slot (`queueTimeoutMs`) instead of failing. |
+| **Isolation** | `isolated: true` runs the task in a fresh git worktree and returns its path. |
+| **Transcript** | `herdr_read_agent` pages the pi session instead of only the final message. |
 | **Diagnosis** | `herdr_doctor` checks binary, server, kinds, aliases, directories, topology, and pi in one call. |
 
 ---
@@ -72,7 +76,7 @@ The `desktop` profile is owned by the Electron app, so install it from **Plugins
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. Install the resulting `dsh-herdr-0.1.0.tgz` (or a `link:/path/to/checkout` spec while developing).
+2. Install the resulting `dsh-herdr-0.2.0.tgz` (or a `link:/path/to/checkout` spec while developing).
 3. Confirm `dsh.profile.bundles` contains `dsh-herdr`.
 4. Start a new session; `herdr_*` tools should be listed.
 
@@ -121,11 +125,13 @@ More: [examples/review-a-diff.md](examples/review-a-diff.md), [examples/implemen
 
 | Tool | Purpose |
 |---|---|
-| `herdr_spawn_agent` | Delegate one subtask; `role=reviewer` is read-only. |
+| `herdr_spawn_agent` | Delegate one subtask; `role=reviewer` is read-only; `isolated:true` uses a worktree. |
 | `herdr_get_agent_result` | Harvest a result; `wait:true` blocks until settled. |
 | `herdr_message_agent` | Follow-ups, review findings, answers to blocked agents. |
 | `herdr_list_agents` | Fleet view: owned and foreign agents. |
 | `herdr_interrupt_agent` | Cancel the current turn, keep the pane. |
+| `herdr_inbox` | Read child messages; `wait:true` long-polls. |
+| `herdr_read_agent` | Page a pi transcript turn by turn. |
 | `herdr_close_agent` | Close an owned pane; session file survives. |
 | `herdr_doctor` | Environment self-check. |
 

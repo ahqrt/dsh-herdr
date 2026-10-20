@@ -4,7 +4,7 @@
 
 | Surface | Promise |
 |---|---|
-| The seven tool names | Stable across `0.x`; removal/rename is a major. |
+| The nine tool names | Stable across `0.x`; removal/rename is a major. |
 | Tool parameters | Additive within a minor; a renamed/removed parameter is a major. |
 | `AgentResult` fields | Additive within a minor; `schemaVersion` bumps for breaking changes. |
 | Config keys | Additive within a minor; a removed key is a major with a migration note. |
@@ -13,11 +13,15 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.2.0 additions
+
+Additive only: `herdr_inbox`, `herdr_read_agent`, `isolated`, `remove_worktree`, `worktree`, and `timing.queuedMs`. Existing tool names and parameters are unchanged; a 0.1 client that ignores the new fields still works.
+
 ## Tested matrix
 
 | | Tested | Notes |
 |---|---|---|
-| DSH | `0.2.1-rc.2` | Headless `web` profile boot: all seven tools activated (the loader compiles every parameter/output schema). The tool and workingDirectory APIs are the only host dependencies. |
+| DSH | `0.2.1-rc.2` | Headless `web` profile boot: all nine tools activated (the loader compiles every parameter/output schema). The tool and workingDirectory APIs are the only host dependencies. |
 | Herdr client | `0.9.4` | Hard floor `0.9.0` (the `agent start --kind` contract). |
 | Herdr server | `0.9.1` | Client/server protocol `22` at the time of writing. |
 | Node | `22.22.3`, `24.x` in CI | ESM only; no native modules. |

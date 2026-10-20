@@ -12,6 +12,8 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
     defaultKind: pi
     defaultModel: flash
     maxParallelAgents: 3
+    queueTimeoutMs: 300000
+    maxQueuedAgents: 10
     defaultTimeoutMs: 900000
 
     # keep delegations inside these directories (empty = no restriction)
@@ -34,7 +36,9 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `defaultKind` | string | `pi` | Kind used when `kind` is omitted. |
 | `defaultModel` | string | `flash` | Alias/ID used for `kind=pi` when `model` is omitted. Empty = pi's own default. |
 | `aliasesFile` | string | `~/.pi/agent/model-aliases.md` | The markdown alias table. Missing file = only raw IDs resolve. |
-| `maxParallelAgents` | number | `3` | Concurrency cap; new spawns fail with `CONCURRENCY_LIMIT`. |
+| `maxParallelAgents` | number | `3` | Concurrency cap. New spawns wait for a slot up to `queueTimeoutMs`. |
+| `queueTimeoutMs` | number | `300000` | Max wait for a slot; `0` fails immediately. |
+| `maxQueuedAgents` | number | `10` | Max waiters in this process; beyond that, `CONCURRENCY_LIMIT`. |
 | `defaultTimeoutMs` | number | `900000` | Default wait budget (10s–1h). |
 | `startTimeoutMs` | number | `60000` | Agent boot budget (5s–5min). |
 | `maxResultChars` | number | `40000` | Truncation for `finalMessage` / `resultText`. |
@@ -44,6 +48,7 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `workspaceLabel` | string | `DSH · {repo}` | Template; `{repo}` is the cwd basename. |
 | `homeDir` | string | `~/.dsh/herdr` | Root for state, audit, and artifacts. |
 | `artifactsRoot` | string | `tasks` | Relative to `homeDir`, or absolute / `~`. |
+| `worktreesRoot` | string | `worktrees` | Where `isolated:true` worktrees are created. |
 | `stateFile` | string | `state.json` | Relative to `homeDir`, or absolute / `~`. |
 | `auditFile` | string | `audit.ndjson` | Relative to `homeDir`, or absolute / `~`. |
 | `allowCwd` | string[] | `[]` | Hard boundary. Empty means "any directory". |
@@ -76,7 +81,9 @@ The workspace map is persisted in `state.json`; closing the workspace by hand is
 
 ## Concurrency
 
-`maxParallelAgents` counts `starting`, `working`, `blocked`, and `running` records. A finished but unclosed agent does not consume a slot; its pane stays for inspection. Raise the cap only if your machine and provider rate limits can take it.
+`maxParallelAgents` counts `starting`, `working`, `blocked`, and `running` records. A finished but unclosed agent does not consume a slot; its pane stays for inspection. Over the cap, a spawn waits up to `queueTimeoutMs` (default 5 min) and reports `timing.queuedMs`; it does not fail instantly. The queue is a poll over the shared registry, so it also sees agents spawned by another DSH process.
+
+`isolated:true` runs the task in `<worktreesRoot>/<repo>-<taskId>` on branch `dsh/<taskId>`, based on `HEAD` of the requested repo. Uncommitted changes are **not** copied. Nothing is merged or removed automatically; review the diff, then `herdr_close_agent({remove_worktree:true})` if you want it gone.
 
 ## Paths and permissions
 

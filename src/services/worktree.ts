@@ -1,0 +1,46 @@
+// Per-task isolated worktrees.
+//
+// A delegation can run in a fresh `git worktree` instead of the user's dirty
+// checkout. The branch is named after the task, the path lives under the DSH
+// home, and nothing is merged automatically: the result carries the path so a
+// human (or DSH) can review and merge deliberately.
+
+import { mkdirSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
+import { HerdrError } from "../domain/errors.js";
+import type { WorktreeInfo } from "../domain/types.js";
+import type { PluginConfig } from "../defaults.js";
+import type { Paths } from "../domain/paths.js";
+import type { GitService } from "../ports/store.js";
+
+export interface WorktreeDeps {
+  git: GitService;
+  config: PluginConfig;
+  paths: Paths;
+}
+
+export class WorktreeService {
+  constructor(private readonly deps: WorktreeDeps) {}
+
+  async create(input: { repoCwd: string; taskId: string }): Promise<WorktreeInfo> {
+    const { git, config, paths } = this.deps;
+    const repo = resolve(input.repoCwd);
+    if (!(await git.isRepo(repo))) {
+      throw new HerdrError("VALIDATION_ERROR", "isolated:true needs a git repository at cwd", {
+        remediation: "run the delegation in a git repo, or omit isolated",
+      });
+    }
+
+    const repoName = basename(repo) || "repo";
+    const path = join(paths.worktreesRoot, `${repoName}-${input.taskId}`);
+    const branch = `dsh/${input.taskId}`;
+    mkdirSync(paths.worktreesRoot, { recursive: true });
+
+    await git.createWorktree({ repoCwd: repo, path, branch, base: "HEAD" });
+    return { path, branch, repo, base: "HEAD" };
+  }
+
+  async remove(info: WorktreeInfo, force = false): Promise<void> {
+    await this.deps.git.removeWorktree({ repoCwd: info.repo, path: info.path, force });
+  }
+}

@@ -1,14 +1,17 @@
 import type { TaskRecord } from "../domain/types.js";
 import type { AuditLog, TaskStore } from "../ports/store.js";
 import type { HerdrTransport } from "../ports/transport.js";
+import type { WorktreeService } from "./worktree.js";
 export interface LifecycleDeps {
     transport: HerdrTransport;
     store: TaskStore;
     audit: AuditLog;
+    worktree: WorktreeService;
 }
 export interface CloseInput {
     target: string;
     force?: boolean;
+    removeWorktree?: boolean;
     signal?: AbortSignal;
 }
 export interface CloseResult {

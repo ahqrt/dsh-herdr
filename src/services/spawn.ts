@@ -23,6 +23,7 @@ import type { Paths } from "../domain/paths.js";
 import type { Clock, IdSource } from "../domain/ids.js";
 import type { HarvestService } from "./harvest.js";
 import type { TopologyService } from "./topology.js";
+import type { WorktreeService } from "./worktree.js";
 
 export interface SpawnDeps {
   transport: HerdrTransport;
@@ -30,6 +31,7 @@ export interface SpawnDeps {
   git: GitService;
   topology: TopologyService;
   harvest: HarvestService;
+  worktree: WorktreeService;
   config: PluginConfig;
   paths: Paths;
   audit: AuditLog;
@@ -38,6 +40,9 @@ export interface SpawnDeps {
 }
 
 export class SpawnService {
+  private reservations = 0;
+  private waiters = 0;
+
   constructor(private readonly deps: SpawnDeps) {}
 
   async spawn(input: SpawnInput): Promise<AgentResult> {
@@ -61,7 +66,8 @@ export class SpawnService {
       if (existing) return this.deps.harvest.harvest(existing, { signal: input.signal });
     }
 
-    const cwd = resolve(input.cwd);
+    let cwd = resolve(input.cwd);
+    const repoCwd = cwd;
     if (!existsSync(cwd) || !statSync(cwd).isDirectory()) {
       throw new HerdrError("VALIDATION_ERROR", `cwd does not exist or is not a directory: ${cwd}`, {
         remediation: "pass an absolute path to an existing project directory",
@@ -74,26 +80,6 @@ export class SpawnService {
         `cwd ${cwd} is outside allowCwd (${allowed.join(", ")})`,
         {
           remediation: "add the directory to allowCwd if this delegation is intentional",
-        },
-      );
-    }
-
-    const active = await store.activeCount();
-    if (active >= config.maxParallelAgents) {
-      const names = (await store.list())
-        .filter(
-          (task) =>
-            task.status === "starting" ||
-            task.status === "working" ||
-            task.status === "blocked" ||
-            task.status === "running",
-        )
-        .map((task) => task.name);
-      throw new HerdrError(
-        "CONCURRENCY_LIMIT",
-        `concurrency cap reached (${active}/${config.maxParallelAgents}): ${names.join(", ")}`,
-        {
-          remediation: "close a finished agent with herdr_close_agent, or raise maxParallelAgents",
         },
       );
     }
@@ -152,6 +138,11 @@ export class SpawnService {
     }
 
     const taskId = ids.taskId(clock.now());
+    let worktree;
+    if (input.isolated) {
+      worktree = await this.deps.worktree.create({ repoCwd, taskId });
+      cwd = worktree.path;
+    }
     const artifactDir = resolve(paths.artifactsRoot, taskId);
     ensureDir(artifactDir);
     const artifacts = artifactPaths(artifactDir);
@@ -170,6 +161,7 @@ export class SpawnService {
     });
     writeFileSync(artifacts.prompt, promptText, "utf8");
 
+    const slot = await this.waitForSlot(input.signal);
     const now = clock.now();
     const record: TaskRecord = {
       schemaVersion: 1,
@@ -184,10 +176,19 @@ export class SpawnService {
       status: "starting",
       createdAt: now,
       updatedAt: now,
+      queuedMs: slot.queuedMs || undefined,
+      worktree,
       clientTaskId: input.clientTaskId,
       baseline: await this.deps.git.baseline(cwd).catch(() => undefined),
     };
-    await store.put(record);
+    try {
+      await store.put(record);
+    } finally {
+      slot.release();
+    }
+    if (slot.queuedMs > 0) {
+      audit.write({ event: "spawn-queued", taskId, name, queuedMs: slot.queuedMs });
+    }
     audit.write({
       event: "spawn-intent",
       taskId,
@@ -372,6 +373,75 @@ export class SpawnService {
     return settled;
   }
 
+  /** Wait for a concurrency slot; reservations stop same-process oversubscription. */
+  private async waitForSlot(
+    signal?: AbortSignal,
+  ): Promise<{ queuedMs: number; release: () => void }> {
+    const { config, store } = this.deps;
+    const started = Date.now();
+    if (await this.hasSlot()) {
+      this.reservations++;
+      return { queuedMs: 0, release: () => this.reservations-- };
+    }
+    if (config.queueTimeoutMs <= 0) {
+      throw await this.capReached(0);
+    }
+    if (this.waiters >= config.maxQueuedAgents) {
+      throw new HerdrError(
+        "CONCURRENCY_LIMIT",
+        `concurrency queue is full (${this.waiters}/${config.maxQueuedAgents} waiting)`,
+        {
+          remediation: "wait for a running agent to settle, close one, or raise maxQueuedAgents",
+        },
+      );
+    }
+
+    this.waiters++;
+    try {
+      const deadline = started + config.queueTimeoutMs;
+      for (;;) {
+        if (signal?.aborted) throw new HerdrError("ABORTED", "spawn aborted while queued");
+        if (Date.now() >= deadline) throw await this.capReached(Date.now() - started);
+        await sleep(750);
+        if (await this.hasSlot()) {
+          this.reservations++;
+          return {
+            queuedMs: Date.now() - started,
+            release: () => this.reservations--,
+          };
+        }
+      }
+    } finally {
+      this.waiters--;
+    }
+  }
+
+  private async hasSlot(): Promise<boolean> {
+    const { config, store } = this.deps;
+    return (await store.activeCount()) + this.reservations < config.maxParallelAgents;
+  }
+
+  private async capReached(waitedMs: number): Promise<HerdrError> {
+    const { config, store } = this.deps;
+    const names = (await store.list())
+      .filter(
+        (task) =>
+          task.status === "starting" ||
+          task.status === "working" ||
+          task.status === "blocked" ||
+          task.status === "running",
+      )
+      .map((task) => task.name);
+    return new HerdrError(
+      "CONCURRENCY_LIMIT",
+      `concurrency cap reached (${config.maxParallelAgents}) after waiting ${waitedMs}ms: ${names.join(", ")}`,
+      {
+        remediation:
+          "close a finished agent with herdr_close_agent, raise maxParallelAgents, or raise queueTimeoutMs",
+      },
+    );
+  }
+
   private async submit(
     name: string,
     promptText: string,
@@ -435,8 +505,7 @@ export class SpawnService {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolveSleep) => {
-    const timer = setTimeout(resolveSleep, ms);
-    timer.unref?.();
+    setTimeout(resolveSleep, ms);
   });
 }
 

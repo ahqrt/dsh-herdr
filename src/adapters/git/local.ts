@@ -4,6 +4,7 @@
 import { execFile } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { HerdrError } from "../../domain/errors.js";
 import type { DiffEvidence, GitBaseline } from "../../domain/types.js";
 import type { GitDiffInput, GitService } from "../../ports/store.js";
 
@@ -100,5 +101,38 @@ export class LocalGit implements GitService {
   async status(cwd: string): Promise<string[]> {
     const result = await runGit(cwd, ["status", "--porcelain"], 5_000);
     return result.ok ? result.stdout.split(/\r?\n/).filter(Boolean) : [];
+  }
+
+  async createWorktree(input: {
+    repoCwd: string;
+    path: string;
+    branch: string;
+    base?: string;
+  }): Promise<void> {
+    const result = await runGit(
+      input.repoCwd,
+      ["worktree", "add", "-b", input.branch, input.path, input.base ?? "HEAD"],
+      60_000,
+    );
+    if (!result.ok) {
+      throw new HerdrError("VALIDATION_ERROR", `git worktree add failed: ${result.stderr.trim()}`, {
+        remediation: "check that the branch name is free and the repository has a commit",
+      });
+    }
+  }
+
+  async removeWorktree(input: { repoCwd: string; path: string; force?: boolean }): Promise<void> {
+    const args = ["worktree", "remove", input.path];
+    if (input.force) args.push("--force");
+    const result = await runGit(input.repoCwd, args, 30_000);
+    if (!result.ok) {
+      throw new HerdrError(
+        "VALIDATION_ERROR",
+        `git worktree remove failed: ${result.stderr.trim()}`,
+        {
+          remediation: "commit or discard the worktree's changes, or pass force:true",
+        },
+      );
+    }
   }
 }

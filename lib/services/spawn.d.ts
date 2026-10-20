@@ -6,12 +6,14 @@ import type { Paths } from "../domain/paths.js";
 import type { Clock, IdSource } from "../domain/ids.js";
 import type { HarvestService } from "./harvest.js";
 import type { TopologyService } from "./topology.js";
+import type { WorktreeService } from "./worktree.js";
 export interface SpawnDeps {
     transport: HerdrTransport;
     store: TaskStore;
     git: GitService;
     topology: TopologyService;
     harvest: HarvestService;
+    worktree: WorktreeService;
     config: PluginConfig;
     paths: Paths;
     audit: AuditLog;
@@ -20,8 +22,14 @@ export interface SpawnDeps {
 }
 export declare class SpawnService {
     private readonly deps;
+    private reservations;
+    private waiters;
     constructor(deps: SpawnDeps);
     spawn(input: SpawnInput): Promise<AgentResult>;
+    /** Wait for a concurrency slot; reservations stop same-process oversubscription. */
+    private waitForSlot;
+    private hasSlot;
+    private capReached;
     private submit;
     private waitForBoot;
     private interruptQuietly;

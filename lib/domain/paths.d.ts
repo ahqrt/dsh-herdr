@@ -3,6 +3,7 @@ export interface Paths {
     root: string;
     stateFile: string;
     artifactsRoot: string;
+    worktreesRoot: string;
     auditFile: string;
     aliasesFile: string;
 }

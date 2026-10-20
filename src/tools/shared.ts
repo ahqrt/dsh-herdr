@@ -74,6 +74,11 @@ export function renderAgentResult(value: AgentResult): ContentBlock[] {
       `agent: ${value.agent.name ?? "?"}${value.agent.paneId ? ` · pane ${value.agent.paneId}` : ""}${value.agent.tabId ? ` · tab ${value.agent.tabId}` : ""}`,
     );
   }
+  if (value.worktree) {
+    lines.push(
+      `worktree: ${value.worktree.path} (${value.worktree.branch} from ${value.worktree.repo})`,
+    );
+  }
   if (value.summary) lines.push(`summary: ${value.summary}`);
   if (value.error) lines.push(`error: ${value.error.code}: ${value.error.message}`);
   if (value.blocked?.question) {
