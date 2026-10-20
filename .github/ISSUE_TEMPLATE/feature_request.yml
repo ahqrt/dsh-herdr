@@ -1,0 +1,50 @@
+name: Feature request
+description: A workflow you want to run with DSH + Herdr.
+title: "[feat] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the workflow, not only the API. Workflow evidence is what moves an item up the roadmap.
+  - type: textarea
+    id: workflow
+    attributes:
+      label: The workflow
+      placeholder: |
+        When I ... I want DSH to ... so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do today
+      description: Manual steps, another tool, or a workaround.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed tool / config change
+      description: Optional. Keep the architecture rule in mind (`tools → services → ports ← adapters`).
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Delegation / spawn
+        - Result harvesting
+        - Review loop / messaging
+        - Fleet / lifecycle
+        - Transport / remote
+        - Docs / DX
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I read ROADMAP.md and this is not already planned.
+          required: true

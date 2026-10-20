@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ahqrt/dsh-herdr/main/schema/agent-result.schema.json",
+  "title": "dsh-herdr AgentResult",
+  "description": "The review packet returned by the herdr_* tools.",
+  "type": "object",
+  "required": ["schemaVersion", "taskId", "status", "role", "agent", "summary", "timing", "nextAction"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "taskId": { "type": "string" },
+    "status": {
+      "enum": ["starting", "working", "blocked", "idle", "running", "completed", "failed", "gone", "closed", "interrupted"]
+    },
+    "role": { "enum": ["worker", "reviewer"] },
+    "agent": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "name": { "type": "string" },
+        "paneId": { "type": "string" },
+        "tabId": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "kind": { "type": "string" },
+        "model": { "type": "string" },
+        "thinking": { "type": "string" }
+      }
+    },
+    "herdrStatus": { "enum": ["idle", "working", "blocked", "done", "unknown"] },
+    "sessionPath": { "type": "string" },
+    "summary": { "type": "string" },
+    "finalMessage": { "type": "string" },
+    "result": {
+      "type": "object",
+      "required": ["path", "text", "meta"],
+      "properties": {
+        "path": { "type": "string" },
+        "text": { "type": "string" },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "summary": { "type": "string" },
+            "tests": { "type": "string" },
+            "files": { "type": "string" }
+          }
+        }
+      }
+    },
+    "diff": {
+      "type": "object",
+      "required": ["stat", "files", "untracked", "patchPath", "patchBytes", "truncated", "dirtyAtStart"],
+      "properties": {
+        "baselineHead": { "type": "string" },
+        "stat": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "untracked": { "type": "array", "items": { "type": "string" } },
+        "patchPath": { "type": "string" },
+        "patchBytes": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" },
+        "dirtyAtStart": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "tests": { "type": "string" },
+    "files": { "type": "array", "items": { "type": "string" } },
+    "usage": {
+      "type": "object",
+      "required": ["assistant", "toolCalls", "outputTokens"],
+      "properties": {
+        "assistant": { "type": "integer", "minimum": 0 },
+        "toolCalls": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "blocked": {
+      "type": "object",
+      "required": ["question", "tail"],
+      "properties": {
+        "question": { "type": "string" },
+        "tail": { "type": "string" }
+      }
+    },
+    "transcriptTail": { "type": "string" },
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "timing": {
+      "type": "object",
+      "required": ["createdAt", "elapsedMs"],
+      "properties": {
+        "createdAt": { "type": "integer" },
+        "promptedAt": { "type": "integer" },
+        "settledAt": { "type": "integer" },
+        "elapsedMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nextAction": { "enum": ["none", "wait", "answer", "inspect"] }
+  },
+  "additionalProperties": false
+}

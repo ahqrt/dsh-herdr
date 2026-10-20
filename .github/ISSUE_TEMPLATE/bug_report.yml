@@ -1,0 +1,75 @@
+name: Bug report
+description: Something broke while delegating to a Herdr agent.
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please run `herdr_doctor` first — its output answers most environment questions.
+  - type: input
+    id: version
+    attributes:
+      label: dsh-herdr version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: dsh
+    attributes:
+      label: DSH version
+      placeholder: 0.2.1-rc.2
+    validations:
+      required: true
+  - type: input
+    id: herdr
+    attributes:
+      label: Herdr client / server
+      placeholder: 0.9.4 / 0.9.1
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS 15 arm64
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: herdr_doctor output
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Ask DSH to ...
+        2. Tool call: ...
+        3. Observed: ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Task id / audit lines / pane state
+      description: Redact paths and tokens.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: This is not a security report (see SECURITY.md).
+          required: true

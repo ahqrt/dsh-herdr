@@ -1,0 +1,8 @@
+# dsh-herdr — one profile layer.
+#
+# Bundle patches *insert* rows; they do not target an existing entry id. The
+# loader imports `name` as a module from the profile's node_modules and calls
+# its exported apply(ctx, config).
+- insert:
+    - id: tool-herdr
+      name: dsh-herdr
