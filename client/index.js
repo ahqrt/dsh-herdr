@@ -37,6 +37,7 @@ window.__ModuleLoader__.load({
       fileHead: { padding: "4px 8px", cursor: "pointer", font: "11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace" },
       diffLine: { display: "block", whiteSpace: "pre-wrap", wordBreak: "break-word" },
       checkbox: { marginTop: 3, accentColor: "var(--dsh-accent, #6f8fd9)" },
+      groupHead: { padding: "4px 10px", fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em", opacity: 0.6, borderBottom: "1px solid var(--dsh-border, #2a2a2a)" },
     };
 
     async function getJson(url) {
@@ -66,11 +67,10 @@ window.__ModuleLoader__.load({
       }
     }
 
-    /** Build a review packet suitable for a PR comment or handoff. */
-    function buildPacket(task) {
-      const lines = [
-        `# Herdr task: ${task.name || task.taskId}`,
-        "",
+    /** Build a review packet; `template` picks the destination shape. */
+    function buildPacket(task, template = "pr") {
+      const title = task.name || task.taskId;
+      const meta = [
         `- task: ${task.taskId}`,
         `- status: ${task.status}`,
         `- kind/model: ${[task.kind, task.model].filter(Boolean).join(" / ") || "-"}`,
@@ -79,6 +79,45 @@ window.__ModuleLoader__.load({
         `- cwd: ${task.cwd || "-"}`,
         `- artifact: ${task.artifactDir || "-"}`,
         `- session: ${task.sessionPath || "-"}`,
+      ];
+      const final = task.finalMessage?.text || "(none)";
+
+      if (template === "summary") {
+        return [
+          `**${title}** — ${task.status}`,
+          "",
+          task.summary || final,
+          "",
+          `cwd: ${task.cwd || "-"}`,
+        ].join("\n");
+      }
+
+      if (template === "issue") {
+        return [
+          `## ${title}`,
+          "",
+          ...meta,
+          "",
+          "### Summary",
+          "",
+          task.summary || "(none)",
+          "",
+          "### Final message",
+          "",
+          final,
+          "",
+          "### Evidence",
+          "",
+          `- artifact: ${task.artifactDir || "-"}`,
+          `- session: ${task.sessionPath || "-"}`,
+          task.diff?.text ? `- diff: ${task.diff.text.length} bytes (omitted from this template)` : "- diff: none",
+        ].join("\n");
+      }
+
+      const lines = [
+        `# Herdr task: ${title}`,
+        "",
+        ...meta,
         "",
         "## Summary",
         "",
@@ -86,7 +125,7 @@ window.__ModuleLoader__.load({
         "",
         "## Final message",
         "",
-        task.finalMessage?.text || "(none)",
+        final,
       ];
       if (task.diff?.text) {
         lines.push("", "## Diff", "", "~~~diff", task.diff.text.trim(), "~~~");
@@ -196,6 +235,8 @@ window.__ModuleLoader__.load({
       const [ownedOnly, setOwnedOnly] = useState(false);
       const [machine, setMachine] = useState("all");
       const [query, setQuery] = useState("");
+      const [template, setTemplate] = useState("pr");
+      const [grouped, setGrouped] = useState(false);
       const [checked, setChecked] = useState({});
 
       const refresh = useCallback(async () => {
@@ -252,6 +293,17 @@ window.__ModuleLoader__.load({
             .some((value) => String(value ?? "").toLowerCase().includes(needle));
         }), [fleet, ownedOnly, machine, query]);
 
+      const groups = useMemo(() => {
+        if (!grouped) return null;
+        const map = new Map();
+        for (const row of rows) {
+          const key = `${row.machine || "local"} · ${row.status || "?"}`;
+          if (!map.has(key)) map.set(key, []);
+          map.get(key).push(row);
+        }
+        return [...map.entries()].map(([key, items]) => ({ key, items }));
+      }, [rows, grouped]);
+
       const checkedIds = useMemo(
         () => Object.keys(checked).filter((id) => fleet.some((row) => row.owned && row.taskId === id)),
         [checked, fleet],
@@ -265,11 +317,11 @@ window.__ModuleLoader__.load({
 
       const copyDetail = useCallback(async (what) => {
         if (!detail) return;
-        const value = what === "packet" ? buildPacket(detail) : detail.cwd;
+        const value = what === "packet" ? buildPacket(detail, template) : detail.cwd;
         if (!value) { setNotice("nothing to copy"); return; }
         const ok = await copyText(value);
         setNotice(ok ? `copied ${what}` : "copy failed");
-      }, [detail]);
+      }, [detail, template]);
 
       const act = useCallback(async (action, payload) => {
         setNotice("");
@@ -304,6 +356,43 @@ window.__ModuleLoader__.load({
         if (action === "close") { setSelected(null); setDetail(null); }
       }, [checkedIds, refresh]);
 
+      const renderRow = (row) => {
+        const active = selected && (selected.taskId || selected.paneId) === (row.taskId || row.paneId);
+        return h("div", {
+          key: `${row.taskId || row.paneId || row.name}-${row.kind}`,
+          style: { ...styles.row, ...(active ? styles.rowActive : {}) },
+          onClick: () => { setSelected(row); setTab("final"); },
+        },
+          row.owned && row.taskId
+            ? h("input", {
+                type: "checkbox",
+                style: styles.checkbox,
+                checked: Boolean(checked[row.taskId]),
+                onClick: (event) => event.stopPropagation(),
+                onChange: () => toggle(row.taskId),
+              })
+            : h("span", { style: { width: 13 } }),
+          h("div", { style: { flex: 1, minWidth: 0 } },
+            h("div", null,
+              h("span", { style: styles.muted }, row.owned ? "* " : "  "),
+              h("strong", null, row.name || row.paneId || "?"),
+              h("span", { style: { ...styles.badge, color: statusColor(row.status) } }, row.status || "?"),
+            ),
+            h("div", { style: { ...styles.muted, marginTop: 2 } },
+              [row.kind, row.model, row.machine].filter(Boolean).join(" · "),
+            ),
+          ),
+        );
+      };
+
+      const listContent = grouped && groups
+        ? groups.map((group) => h(React.Fragment, { key: group.key },
+            h("div", { style: styles.groupHead }, `${group.key} (${group.items.length})`),
+            group.items.map(renderRow),
+          ))
+        : rows.map(renderRow);
+
+
       return h("div", { style: styles.root },
         h("div", { style: styles.bar },
           h("span", { style: styles.title }, "Herdr"),
@@ -316,6 +405,7 @@ window.__ModuleLoader__.load({
           }),
           h("span", { style: { flex: 1 } }),
           h("button", { style: { ...styles.button, ...(ownedOnly ? styles.buttonOn : {}) }, onClick: () => setOwnedOnly(!ownedOnly) }, "owned"),
+          h("button", { style: { ...styles.button, ...(grouped ? styles.buttonOn : {}) }, onClick: () => setGrouped(!grouped) }, "group"),
           machines.length > 0
             ? h("select", { style: styles.select, value: machine, onChange: (e) => setMachine(e.target.value) },
                 h("option", { value: "all" }, "all machines"),
@@ -337,34 +427,7 @@ window.__ModuleLoader__.load({
           h("div", { style: styles.list },
             rows.length === 0
               ? h("div", { style: styles.empty }, ownedOnly ? "No owned agents." : "No agents. Spawn one with herdr_spawn_agent.")
-              : rows.map((row) => {
-                  const active = selected && (selected.taskId || selected.paneId) === (row.taskId || row.paneId);
-                  return h("div", {
-                    key: `${row.taskId || row.paneId || row.name}-${row.kind}`,
-                    style: { ...styles.row, ...(active ? styles.rowActive : {}) },
-                    onClick: () => { setSelected(row); setTab("final"); },
-                  },
-                    row.owned && row.taskId
-                      ? h("input", {
-                          type: "checkbox",
-                          style: styles.checkbox,
-                          checked: Boolean(checked[row.taskId]),
-                          onClick: (event) => event.stopPropagation(),
-                          onChange: () => toggle(row.taskId),
-                        })
-                      : h("span", { style: { width: 13 } }),
-                    h("div", { style: { flex: 1, minWidth: 0 } },
-                      h("div", null,
-                        h("span", { style: styles.muted }, row.owned ? "* " : "  "),
-                        h("strong", null, row.name || row.paneId || "?"),
-                        h("span", { style: { ...styles.badge, color: statusColor(row.status) } }, row.status || "?"),
-                      ),
-                      h("div", { style: { ...styles.muted, marginTop: 2 } },
-                        [row.kind, row.model, row.machine].filter(Boolean).join(" · "),
-                      ),
-                    ),
-                  );
-                }),
+              : listContent,
           ),
           h("div", { style: styles.detail },
             loadingSelected
@@ -380,8 +443,18 @@ window.__ModuleLoader__.load({
                         }, name),
                       ),
                       h("span", { style: { flex: 1 } }),
+                      h("select", {
+                        style: styles.select,
+                        value: template,
+                        onChange: (event) => setTemplate(event.target.value),
+                      },
+                        h("option", { value: "pr" }, "PR"),
+                        h("option", { value: "issue" }, "issue"),
+                        h("option", { value: "summary" }, "summary"),
+                      ),
                       h("button", { style: styles.button, onClick: () => void copyDetail("packet") }, "copy packet"),
                       h("button", { style: styles.button, onClick: () => void copyDetail("cwd") }, "copy cwd"),
+                      h("button", { style: styles.button, onClick: () => void act("reveal", { target: detail.taskId }) }, "reveal cwd"),
                       h("button", { style: styles.button, onClick: () => void act("interrupt", { target: detail.taskId }) }, "interrupt"),
                       h("button", {
                         style: { ...styles.button, ...styles.danger },

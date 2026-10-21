@@ -23,6 +23,7 @@ import { InboxService } from "./services/inbox.js";
 import { TranscriptService } from "./services/transcript.js";
 import { WorktreeService } from "./services/worktree.js";
 import { HerdrSubagentProvider } from "./services/subagent-provider.js";
+import { RevealService } from "./services/reveal.js";
 import {
   registerSubagentProvider,
   type SubagentRegistrationStatus,
@@ -101,7 +102,8 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
   const inbox = new InboxService({ store, runtimes });
   const transcript = new TranscriptService(store, runtimes);
   const lifecycle = new LifecycleService({ transports, store, audit, worktree });
-  const herdrApi = createHerdrApi({ store, lifecycle, runtimes, transports, paths });
+  const reveal = new RevealService({ store });
+  const herdrApi = createHerdrApi({ store, lifecycle, runtimes, transports, reveal, paths });
   const registerApi = (subContext: {
     webServer: { register(options: unknown): unknown };
     effect?: (fn: () => unknown, label: string) => void;

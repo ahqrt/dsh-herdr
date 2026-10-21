@@ -14,6 +14,7 @@ import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
 import type { TransportPool } from "../ports/transports.js";
 import type { LifecycleService } from "../services/lifecycle.js";
+import type { RevealService } from "../services/reveal.js";
 
 const MAX_TEXT = 300_000;
 const MAX_BODY = 32 * 1024;
@@ -23,6 +24,7 @@ export interface HerdrApiDeps {
   lifecycle: LifecycleService;
   runtimes: MachineRuntimePool;
   transports: TransportPool;
+  reveal: RevealService;
   paths: Paths;
 }
 
@@ -140,6 +142,11 @@ async function action(
       json(res, 200, { ok: true, result });
       return;
     }
+    if (body.action === "reveal") {
+      const result = await deps.reveal.reveal(target);
+      json(res, 200, { ok: true, result });
+      return;
+    }
     if (body.action === "close") {
       const result = await deps.lifecycle.close({
         target,
@@ -149,7 +156,7 @@ async function action(
       json(res, 200, { ok: true, result });
       return;
     }
-    json(res, 400, { ok: false, error: 'action must be "interrupt" or "close"' });
+    json(res, 400, { ok: false, error: 'action must be "interrupt", "reveal", or "close"' });
   } catch (error) {
     sendError(res, error);
   }

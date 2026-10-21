@@ -93,7 +93,7 @@ Consequences:
 | `src/adapters/fs/store.ts` | Atomic, locked, versioned state file; rotating audit. |
 | `src/adapters/fs/memory-store.ts` | Test/embed store. |
 | `src/adapters/git/local.ts` | Baseline and bounded diff. |
-| `src/services/*` | Use cases (spawn, harvest, message, inbox, transcript, worktree, subagent-provider, …). No I/O beyond their ports. |
+| `src/services/*` | Use cases (spawn, harvest, message, inbox, transcript, worktree, subagent-provider, reveal, …). No I/O beyond their ports. |
 | `src/server/herdr-api.ts` | `/herdr/api` read endpoints plus guarded panel actions. |
 | `client/index.js` | Browser half: `Herdr` right-sidebar tab and guide entry. |
 | `src/tools/*` | Parameter schemas, cwd resolution, model-facing rendering. |
@@ -167,7 +167,8 @@ The host registers a same-origin `/herdr/api` prefix route (`health`, `fleet`,
 still load. `POST /herdr/api/action` additionally requires
 `x-herdr-panel: 1` and a JSON body, then calls `LifecycleService.interrupt` or
 `close`; ownership, pane-identity, and active-agent gates are the service's, not
-a second implementation. `live` reads a pane tail through
+a second implementation. `reveal` opens the record's cwd through a detached
+native opener; the path never comes from the request body. `live` reads a pane tail through
 `transport.readAgent` and never mutates; external agents are therefore
 read-only in the panel. The browser half is a hand-written client module
 (`lib/client.js`) that registers a `sidebarRightTabs` type plus the

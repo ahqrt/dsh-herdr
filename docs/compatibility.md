@@ -13,6 +13,11 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.10.0 additions
+
+Additive: packet templates and grouping in the panel, plus the `reveal` panel
+action. `reveal` is owned-task-only and uses the record's cwd.
+
 ## 0.9.0 additions
 
 Additive: panel search, Markdown review-packet copy, cwd copy, and a `summary`

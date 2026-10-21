@@ -58,12 +58,18 @@ has a place below, roughly in order of value.
   `result.md`) as Markdown.
 - **Copy cwd** for opening the worktree elsewhere.
 
-## 0.10 — handoff
+## 0.10 — handoff (shipped in 0.10.0)
 
-- **Open cwd** in the file sidebar once the client exposes a path-targeted files
-  tab.
-- **Packet templates** (PR comment, issue, plain summary).
-- **Fleet grouping** by machine and status.
+- **Packet templates**: PR comment, issue, and compact summary.
+- **Fleet grouping** by machine + status.
+- **Reveal cwd** in the OS file manager (the path-targeted files tab is still
+  not exposed by the client, so this replaces "open in sidebar").
+
+## 0.11 — editor handoff
+
+- **Open in editor** for the task cwd (configurable command, no shell).
+- **Packet clipboard history** of the last few copies.
+- **Panel keyboard navigation** for fleet rows and tabs.
 
 ## 0.5 — hosts and polish (native provider shipped in 0.5.0)
 

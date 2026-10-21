@@ -6,6 +6,17 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-21
+
+### Added
+
+- **Packet templates**: PR comment (full), issue (metadata + summary + final,
+  diff omitted), and summary (compact).
+- **Fleet grouping**: group by machine + status with one toggle.
+- **Reveal cwd**: open an owned task's working directory in the OS file manager
+  (`POST /herdr/api/action` action `reveal`); the path comes from the task record,
+  never from the request body.
+
 ## [0.9.0] - 2026-10-21
 
 ### Added

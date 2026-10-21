@@ -93,6 +93,9 @@ function setup() {
         },
       }),
     },
+    reveal: {
+      reveal: async (target) => ({ revealed: true, cwd: "/repo", message: `revealed ${target}` }),
+    },
     transports: {
       resolve: () => ({
         getAgent: async (target) =>
