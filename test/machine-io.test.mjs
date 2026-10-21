@@ -12,6 +12,9 @@ import { LocalGit } from "../lib/adapters/git/local.js";
 import { resolveConfig } from "../lib/defaults.js";
 import { resolvePaths } from "../lib/domain/paths.js";
 
+const windows = process.platform === "win32";
+const skip = windows && "the SSH bridge uses a POSIX shell";
+
 function fakeSsh(dir) {
   const path = join(dir, "fake-ssh");
   writeFileSync(path, '#!/bin/sh\nshift 7\nexec /bin/sh -lc "$1"\n', "utf8");
@@ -51,7 +54,7 @@ test("shellQuote survives single quotes", () => {
   assert.equal(shellQuote("a'b"), "'a'\\''b'");
 });
 
-test("SshMachineIo runs file operations through ssh", async () => {
+test("SshMachineIo runs file operations through ssh", { skip }, async () => {
   const dir = mkdtempSync(join(tmpdir(), "herdr-sshio-"));
   try {
     const io = new SshMachineIo({ target: "fake", sshBin: fakeSsh(dir), env: process.env });
@@ -66,7 +69,7 @@ test("SshMachineIo runs file operations through ssh", async () => {
   }
 });
 
-test("RemoteGit produces the same evidence as LocalGit", async () => {
+test("RemoteGit produces the same evidence as LocalGit", { skip }, async () => {
   const dir = mkdtempSync(join(tmpdir(), "herdr-sshgit-"));
   const work = repo();
   try {
@@ -96,7 +99,7 @@ test("RemoteGit produces the same evidence as LocalGit", async () => {
   }
 });
 
-test("runtime pool resolves SSH, shared, and invalid machines", async () => {
+test("runtime pool resolves SSH, shared, and invalid machines", { skip }, async () => {
   const dir = mkdtempSync(join(tmpdir(), "herdr-pool-"));
   try {
     const config = resolveConfig({
