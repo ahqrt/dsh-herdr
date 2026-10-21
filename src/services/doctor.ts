@@ -45,6 +45,7 @@ export interface DoctorDeps {
   config: PluginConfig;
   paths: Paths;
   env: NodeJS.ProcessEnv;
+  nativeProvider?: import("./subagent-registration.js").SubagentRegistrationStatus;
 }
 
 export class DoctorService {
@@ -147,6 +148,19 @@ export class DoctorService {
         `not writable: ${error instanceof Error ? error.message : String(error)}`,
       );
       next.push(`fix permissions on ${paths.root}`);
+    }
+
+    if (!config.nativeSubagent) {
+      add("ok", "native subagent", "disabled by config");
+    } else if (this.deps.nativeProvider?.registered) {
+      add("ok", "native subagent", `provider "${this.deps.nativeProvider.name}" registered`);
+    } else {
+      add(
+        "warn",
+        "native subagent",
+        this.deps.nativeProvider?.error ??
+          "provider has not been registered yet (subagents service unavailable)",
+      );
     }
 
     add(

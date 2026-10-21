@@ -13,6 +13,8 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
     socketPath: ~/.config/herdr/herdr.sock
     defaultKind: pi
     defaultModel: flash
+    nativeSubagent: true
+    subagentName: herdr
     maxParallelAgents: 3
     queueTimeoutMs: 300000
     maxQueuedAgents: 10
@@ -52,6 +54,8 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `remoteHomeDir` | string | `~/.dsh/herdr` | Task/worktree root on SSH machines, resolved against the remote `$HOME`. |
 | `defaultKind` | string | `pi` | Kind used when `kind` is omitted. |
 | `defaultModel` | string | `flash` | Alias/ID used for `kind=pi` when `model` is omitted. Empty = pi's own default. |
+| `nativeSubagent` | boolean | `true` | Register the `herdr` provider with DSH's subagent service. |
+| `subagentName` | string | `herdr` | Provider name a `dsh-tool-subagent` row selects. |
 | `aliasesFile` | string | `~/.pi/agent/model-aliases.md` | The markdown alias table. Missing file = only raw IDs resolve. |
 | `maxParallelAgents` | number | `3` | Concurrency cap. New spawns wait for a slot up to `queueTimeoutMs`. |
 | `queueTimeoutMs` | number | `300000` | Max wait for a slot; `0` fails immediately. |
@@ -95,6 +99,26 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `split` | DSH inside Herdr | Split the caller's pane; requires `HERDR_ENV` and `HERDR_PANE_ID`. |
 
 The workspace map is persisted in `state.json`; closing the workspace by hand is fine — the next spawn recreates it once.
+
+## Native subagent provider
+
+The plugin registers a DSH subagent provider named by `subagentName`. To make
+the native `subagent` tool route through Herdr, add a tool row (the default
+`subagent` row keeps using the in-process `spawn` provider):
+
+```yaml
+- id: tool-subagent-herdr
+  name: "@deepseek-ai/dsh-tool-subagent"
+  config:
+    provider: herdr
+    toolName: herdr_subagent
+```
+
+That tool returns the child's final text through DSH's subagent service, so it
+gets native cards, catalog entries, and cancellation. The provider advertises
+no `agentOptions`, preset, structured-output, or depth capabilities; use
+`herdr_spawn_agent` when you need the full review packet (diff, session,
+artifacts).
 
 ## Transports
 

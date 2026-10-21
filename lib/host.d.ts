@@ -22,6 +22,7 @@ export interface PluginContext {
         register(tool: unknown): void;
     };
     get?(name: string): unknown;
+    inject?(deps: string[], callback: (context: any) => void): void;
     workingDirectory?: WorkingDirectoryService;
     logger?: PluginLogger;
 }

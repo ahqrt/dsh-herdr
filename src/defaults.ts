@@ -9,6 +9,10 @@ export interface PluginConfig {
   socketPath: string;
   defaultKind: string;
   defaultModel: string;
+  /** Register a DSH subagent provider backed by Herdr. */
+  nativeSubagent: boolean;
+  /** Provider name used by a dsh-tool-subagent row. */
+  subagentName: string;
   aliasesFile: string;
   maxParallelAgents: number;
   queueTimeoutMs: number;
@@ -43,6 +47,8 @@ export const DEFAULT_CONFIG: PluginConfig = {
   socketPath: "~/.config/herdr/herdr.sock",
   defaultKind: "pi",
   defaultModel: "flash",
+  nativeSubagent: true,
+  subagentName: "herdr",
   aliasesFile: "~/.pi/agent/model-aliases.md",
   maxParallelAgents: 3,
   queueTimeoutMs: 300_000,

@@ -14,6 +14,8 @@ export const Config = z.object({
   socketPath: z.string().default(DEFAULT_CONFIG.socketPath),
   defaultKind: z.string().default(DEFAULT_CONFIG.defaultKind),
   defaultModel: z.string().default(DEFAULT_CONFIG.defaultModel),
+  nativeSubagent: z.boolean().default(DEFAULT_CONFIG.nativeSubagent),
+  subagentName: z.string().default(DEFAULT_CONFIG.subagentName),
   aliasesFile: z.string().default(DEFAULT_CONFIG.aliasesFile),
   maxParallelAgents: z.number().default(DEFAULT_CONFIG.maxParallelAgents),
   queueTimeoutMs: z.number().default(DEFAULT_CONFIG.queueTimeoutMs),

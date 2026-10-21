@@ -6,6 +6,10 @@ export interface PluginConfig {
     socketPath: string;
     defaultKind: string;
     defaultModel: string;
+    /** Register a DSH subagent provider backed by Herdr. */
+    nativeSubagent: boolean;
+    /** Provider name used by a dsh-tool-subagent row. */
+    subagentName: string;
     aliasesFile: string;
     maxParallelAgents: number;
     queueTimeoutMs: number;

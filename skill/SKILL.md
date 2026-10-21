@@ -16,6 +16,8 @@ description: "Delegate a subtask to a Herdr-managed coding agent (pi/agy/claude/
 - 短名不在别名表里 → 先跑 `pi --list-models <关键词>` 查真实 `provider/model`；查不到问用户，不要猜。
 - 别名表是**计费边界**：标了 xAI 订阅的不要发到 commandcode。
 
+如果配置了原生的 `herdr_subagent` 工具（`dsh-tool-subagent` + `provider: herdr`），简单的独立任务可以用它，DSH 会显示原生 subagent 卡片；需要 diff、session、artifact 或 blocked 问题时仍用 `herdr_spawn_agent`。
+
 ## 2. 派活
 
 ```text

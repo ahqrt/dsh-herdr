@@ -6,6 +6,19 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+
+### Added
+
+- **Native subagent provider** `herdr`: register with `ctx.subagents` so a
+  `@deepseek-ai/dsh-tool-subagent` row with `provider: herdr` routes through
+  Herdr and gets the native catalog, cards, and cancellation.
+- `nativeSubagent` and `subagentName` config keys; the provider is disabled by
+  default only when `nativeSubagent: false`.
+- Provider startup maps `start` to a non-blocking spawn; the result promise
+  resolves from the Herdr settle + harvest (`stop`, `error`, `aborted`), and
+  `dispose()` interrupts then closes the owned pane.
+
 ## [0.4.0] - 2026-10-21
 
 ### Added

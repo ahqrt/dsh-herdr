@@ -22,6 +22,11 @@ import { MessageService } from "./services/message.js";
 import { InboxService } from "./services/inbox.js";
 import { TranscriptService } from "./services/transcript.js";
 import { WorktreeService } from "./services/worktree.js";
+import { HerdrSubagentProvider } from "./services/subagent-provider.js";
+import {
+  registerSubagentProvider,
+  type SubagentRegistrationStatus,
+} from "./services/subagent-registration.js";
 import { LifecycleService } from "./services/lifecycle.js";
 import { DoctorService } from "./services/doctor.js";
 import { createTools, TOOL_NAMES } from "./tools/index.js";
@@ -95,12 +100,17 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
   const inbox = new InboxService({ store, runtimes });
   const transcript = new TranscriptService(store, runtimes);
   const lifecycle = new LifecycleService({ transports, store, audit, worktree });
+  const providerStatus: SubagentRegistrationStatus = {
+    name: config.subagentName,
+    registered: false,
+  };
   const doctor = new DoctorService({
     transports,
     runtimes,
     config,
     paths,
     env: process.env,
+    nativeProvider: providerStatus,
   });
 
   const deps = {
@@ -120,6 +130,23 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
 
   for (const tool of createTools(deps, defineTool as unknown as DefineTool)) {
     ctx.tools.register(tool);
+  }
+
+  if (config.nativeSubagent) {
+    const provider = new HerdrSubagentProvider({
+      config,
+      store,
+      transports,
+      spawn,
+      harvest,
+      lifecycle,
+    });
+    registerSubagentProvider(ctx, provider, providerStatus);
+    if (providerStatus.registered) {
+      ctx.logger?.info(`dsh-herdr subagent provider "${provider.name}" registered`);
+    } else if (providerStatus.error) {
+      ctx.logger?.warn(`dsh-herdr subagent provider not registered: ${providerStatus.error}`);
+    }
   }
 
   ctx.logger?.info(

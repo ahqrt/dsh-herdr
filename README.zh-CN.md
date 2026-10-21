@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.4.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.5.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
@@ -42,6 +42,7 @@ DSH 自带 subagent 跑在进程内，和主会话共用模型。有些场景你
 | **Transcript** | `herdr_read_agent` 按 turn 翻 pi session，不只看最终答复。 |
 | **事件等待** | 可选 socket 传输，用 `agent.wait` 在服务端等；连接失败自动退回 CLI。 |
 | **远程机器** | spawn/list/result/message 支持 `machine`，走 `herdr --machine`；SSH 文件桥（`machineTargets`）不再需要本地挂载。 |
+| **原生 subagent** | 注册 `herdr` subagent provider，让 `dsh-tool-subagent` 的委派走 Herdr，获得原生卡片、catalog 和取消。 |
 | **可诊断** | `herdr_doctor` 一次检查 binary、server、kinds、别名表、目录、拓扑、pi。 |
 
 ---
@@ -78,11 +79,11 @@ flowchart LR
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.4.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.5.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
-`dsh-herdr@0.4.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
+`dsh-herdr@0.5.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
 
 ### 装进 CLI profile
 
@@ -140,6 +141,22 @@ DSH:  → herdr_message_agent({ target: "worker-flash-a1b2", kind: "REVIEW_FINDI
 完整参数和返回值见 [docs/tools.md](docs/tools.md)，结果 JSON 契约见 [docs/result-contract.md](docs/result-contract.md)。
 
 ---
+
+### 原生 subagent provider
+
+插件还会向 DSH 的 subagent 服务注册一个名为 `herdr` 的 provider。把
+`dsh-tool-subagent` 的一行指向它，就能拿到原生 subagent 卡片、catalog 和取消：
+
+```yaml
+- id: tool-subagent-herdr
+  name: "@deepseek-ai/dsh-tool-subagent"
+  config:
+    provider: herdr
+    toolName: herdr_subagent
+```
+
+这个原生工具只返回子 agent 的最终文本；需要 diff、session、artifact 和
+blocked 问题时用 `herdr_spawn_agent`。
 
 ## 结果是怎么来的
 

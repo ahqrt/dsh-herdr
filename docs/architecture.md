@@ -93,7 +93,7 @@ Consequences:
 | `src/adapters/fs/store.ts` | Atomic, locked, versioned state file; rotating audit. |
 | `src/adapters/fs/memory-store.ts` | Test/embed store. |
 | `src/adapters/git/local.ts` | Baseline and bounded diff. |
-| `src/services/*` | Use cases (spawn, harvest, message, inbox, transcript, worktree, …). No I/O beyond their ports. |
+| `src/services/*` | Use cases (spawn, harvest, message, inbox, transcript, worktree, subagent-provider, …). No I/O beyond their ports. |
 | `src/tools/*` | Parameter schemas, cwd resolution, model-facing rendering. |
 
 ## Spawn lifecycle
@@ -157,6 +157,15 @@ Two state machines are intentionally separate.
 ### Freshness
 
 A pi session file is append-only across turns. Harvest only accepts its last assistant message when `session.mtime >= promptedAt - 1s`. Otherwise the message belongs to an earlier turn and is ignored; the fallback artifacts take over. This is what makes a **follow-up** message safe on the same session file.
+
+## Native subagent provider
+
+`services/subagent-provider.ts` implements DSH's external-provider shape:
+`start(request)` returns `{ id, result, dispose }` immediately. `start` spawns
+with `wait:false`; a background settlement waits for Herdr, harvests, and maps
+the result onto `{ output, stopReason }`. `dispose()` interrupts and closes the
+owned pane. It declares no `agentOptions`, preset, structured-output, or depth
+capabilities, and it does not inherit the parent conversation.
 
 ## Transports and machines
 

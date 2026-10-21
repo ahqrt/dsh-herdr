@@ -29,6 +29,7 @@ export interface DoctorDeps {
     config: PluginConfig;
     paths: Paths;
     env: NodeJS.ProcessEnv;
+    nativeProvider?: import("./subagent-registration.js").SubagentRegistrationStatus;
 }
 export declare class DoctorService {
     private readonly deps;

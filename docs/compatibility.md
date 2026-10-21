@@ -13,6 +13,12 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.5.0 additions
+
+Additive: `nativeSubagent`, `subagentName`, and a `herdr` DSH subagent provider.
+Existing `herdr_*` tools are unchanged; the native provider is opt-in through a
+`dsh-tool-subagent` row.
+
 ## 0.4.0 additions
 
 Additive: `machineTargets`, `remoteHomeDir`, and SSH-backed task/session/diff

@@ -158,6 +158,14 @@ resolve it automatically. Remote **spawn** needs file access: `machineTargets` (
 `sharedFilesystem` (mount). The SSH bridge reads artifacts and the pi session
 and writes the diff patch locally; `list`/`read`/`message` only need the API.
 
+## Native subagent tool
+
+Registering the provider is not a tool by itself. Add a
+`@deepseek-ai/dsh-tool-subagent` row with `provider: herdr` and a distinct
+`toolName` (for example `herdr_subagent`) to get the native delegation tool.
+It returns the child's final text through DSH's subagent service; `herdr_spawn_agent`
+remains the rich path with diff and artifacts.
+
 ## Protocol headers
 
 Agent-to-DSH and DSH-to-agent messages use a small vocabulary so a review loop is legible in the transcript:
