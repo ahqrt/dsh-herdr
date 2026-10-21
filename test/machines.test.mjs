@@ -23,7 +23,11 @@ process.stdout.write('{"result":{}}\\n');
   return path;
 }
 
-test("HerdrCli prefixes --machine except for the local version probe", async () => {
+const windows = process.platform === "win32";
+
+test("HerdrCli prefixes --machine except for the local version probe", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
   const dir = mkdtempSync(join(tmpdir(), "herdr-machine-"));
   try {
     const bin = fakeBinary(dir);

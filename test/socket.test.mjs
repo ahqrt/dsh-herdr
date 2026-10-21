@@ -4,6 +4,9 @@ import net from "node:net";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+const windows = process.platform === "win32";
+const skip = windows && "Unix sockets are POSIX-only in this suite";
+
 import { HerdrSocketClient } from "../lib/adapters/herdr/socket-client.js";
 import { HerdrSocketTransport } from "../lib/adapters/herdr/socket-transport.js";
 
@@ -47,7 +50,7 @@ function stop({ server, sockets, dir }) {
   });
 }
 
-test("socket client multiplexes requests and parses results", async () => {
+test("socket client multiplexes requests and parses results", { skip }, async () => {
   const holder = await startServer((request, socket) => {
     if (request.method === "agent.list") {
       socket.write(
@@ -83,7 +86,7 @@ test("socket client multiplexes requests and parses results", async () => {
   }
 });
 
-test("socket errors map onto the plugin code set", async () => {
+test("socket errors map onto the plugin code set", { skip }, async () => {
   const holder = await startServer((request, socket) => {
     socket.write(
       JSON.stringify({
@@ -105,7 +108,7 @@ test("socket errors map onto the plugin code set", async () => {
   }
 });
 
-test("socket requests time out with a typed error", async () => {
+test("socket requests time out with a typed error", { skip }, async () => {
   const holder = await startServer(() => {
     /* never answer */
   });
@@ -121,7 +124,7 @@ test("socket requests time out with a typed error", async () => {
   }
 });
 
-test("socket transport maps domain calls and events", async () => {
+test("socket transport maps domain calls and events", { skip }, async () => {
   const seen = [];
   const holder = await startServer((request, socket) => {
     seen.push(request);
@@ -188,7 +191,7 @@ test("socket transport maps domain calls and events", async () => {
   }
 });
 
-test("auto mode degrades to CLI when the socket cannot connect", async () => {
+test("auto mode degrades to CLI when the socket cannot connect", { skip }, async () => {
   const fallback = {
     listAgents: async () => [{ name: "fallback-agent" }],
     getAgent: async () => ({ name: "fallback-agent" }),
