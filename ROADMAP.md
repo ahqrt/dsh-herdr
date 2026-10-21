@@ -65,11 +65,17 @@ has a place below, roughly in order of value.
 - **Reveal cwd** in the OS file manager (the path-targeted files tab is still
   not exposed by the client, so this replaces "open in sidebar").
 
-## 0.11 — editor handoff
+## 0.11 — editor handoff (shipped in 0.11.0)
 
-- **Open in editor** for the task cwd (configurable command, no shell).
-- **Packet clipboard history** of the last few copies.
-- **Panel keyboard navigation** for fleet rows and tabs.
+- **Open in editor** for the task cwd (configured command + args, no shell).
+- **Packet clipboard history** of the last three copies.
+- **Keyboard navigation** for fleet rows (ArrowUp/ArrowDown/Enter).
+
+## 0.12 — panel depth
+
+- **Keyboard tab navigation** (Left/Right between final/diff/result).
+- **Editor presets** (`code`, `cursor`, `zed`) with detection.
+- **Packet history persistence** across panel remounts.
 
 ## 0.5 — hosts and polish (native provider shipped in 0.5.0)
 

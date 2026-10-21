@@ -13,6 +13,11 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.11.0 additions
+
+Additive: `editorCommand`/`editorArgs`, the panel `editor` action, packet
+history, and keyboard row navigation. The editor is disabled until configured.
+
 ## 0.10.0 additions
 
 Additive: packet templates and grouping in the panel, plus the `reveal` panel

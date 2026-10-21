@@ -24,7 +24,8 @@ flowchart LR
   refuses unowned tasks, changed panes, and active closes without `force`.
   Reads return task text and, through `live`, a pane tail for any agent the
   local Herdr server knows. `reveal` opens only an owned record's cwd (never a
-  body-supplied path) in the OS file manager. Treat the web origin as trusted.
+  body-supplied path) in the OS file manager; `editor` spawns the configured
+  command with argv (no shell) and the same owned cwd. Treat the web origin as trusted.
 - **Remote machines are limited by config.** `machines` is an allowlist; file
   access comes from `machineTargets` (SSH) or `sharedFilesystem`. The SSH bridge
   runs with `BatchMode=yes`, never stores credentials, and quotes every path;

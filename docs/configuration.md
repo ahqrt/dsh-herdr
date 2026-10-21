@@ -15,6 +15,9 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
     defaultModel: flash
     nativeSubagent: true
     subagentName: herdr
+    # panel "open editor": command plus fixed args; empty hides the button
+    editorCommand: ""
+    editorArgs: []
     maxParallelAgents: 3
     queueTimeoutMs: 300000
     maxQueuedAgents: 10
@@ -56,6 +59,8 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `defaultModel` | string | `flash` | Alias/ID used for `kind=pi` when `model` is omitted. Empty = pi's own default. |
 | `nativeSubagent` | boolean | `true` | Register the `herdr` provider with DSH's subagent service. |
 | `subagentName` | string | `herdr` | Provider name a `dsh-tool-subagent` row selects. |
+| `editorCommand` | string | `""` | Command the panel's **open editor** action spawns with the task cwd; empty hides the button. |
+| `editorArgs` | string[] | `[]` | Fixed argv inserted before the cwd. The command is spawned directly, never through a shell. |
 | `aliasesFile` | string | `~/.pi/agent/model-aliases.md` | The markdown alias table. Missing file = only raw IDs resolve. |
 | `maxParallelAgents` | number | `3` | Concurrency cap. New spawns wait for a slot up to `queueTimeoutMs`. |
 | `queueTimeoutMs` | number | `300000` | Max wait for a slot; `0` fails immediately. |

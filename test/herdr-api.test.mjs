@@ -95,6 +95,8 @@ function setup() {
     },
     reveal: {
       reveal: async (target) => ({ revealed: true, cwd: "/repo", message: `revealed ${target}` }),
+      editorEnabled: () => true,
+      openEditor: async (target) => ({ revealed: true, cwd: "/repo", message: `opened ${target}` }),
     },
     transports: {
       resolve: () => ({
@@ -140,6 +142,7 @@ test("task detail returns result, final message, and diff", async () => {
     const task = JSON.parse(res.body).task;
     assert.equal(task.name, "worker-a");
     assert.equal(task.summary, "a short summary");
+    assert.equal(task.editorEnabled, true);
     assert.match(task.result.text, /body text/);
     assert.match(task.diff.text, /\+added line/);
   } finally {

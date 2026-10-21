@@ -168,7 +168,9 @@ still load. `POST /herdr/api/action` additionally requires
 `x-herdr-panel: 1` and a JSON body, then calls `LifecycleService.interrupt` or
 `close`; ownership, pane-identity, and active-agent gates are the service's, not
 a second implementation. `reveal` opens the record's cwd through a detached
-native opener; the path never comes from the request body. `live` reads a pane tail through
+native opener; the path never comes from the request body. `editor` uses the
+configured `editorCommand` + `editorArgs` and appends that same cwd, again with
+argv and no shell. `live` reads a pane tail through
 `transport.readAgent` and never mutates; external agents are therefore
 read-only in the panel. The browser half is a hand-written client module
 (`lib/client.js`) that registers a `sidebarRightTabs` type plus the

@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.10.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.11.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
@@ -43,7 +43,7 @@ DSH 自带 subagent 跑在进程内，和主会话共用模型。有些场景你
 | **事件等待** | 可选 socket 传输，用 `agent.wait` 在服务端等；连接失败自动退回 CLI。 |
 | **远程机器** | spawn/list/result/message 支持 `machine`，走 `herdr --machine`；SSH 文件桥（`machineTargets`）不再需要本地挂载。 |
 | **原生 subagent** | 注册 `herdr` subagent provider，让 `dsh-tool-subagent` 的委派走 Herdr，获得原生卡片、catalog 和取消。 |
-| **Web 面板** | 右侧栏 `Herdr` 标签页：可搜索/分组舰队、外部 agent 只读输出、按文件分组的 diff、packet 模板、reveal cwd，以及自有任务的批量 interrupt/close。 |
+| **Web 面板** | 右侧栏 `Herdr` 标签页：可搜索/分组舰队、外部 agent 只读输出、按文件分组的 diff、packet 模板/历史、reveal 或 open editor，以及批量 interrupt/close。 |
 | **可诊断** | `herdr_doctor` 一次检查 binary、server、kinds、别名表、目录、拓扑、pi。 |
 
 ---
@@ -80,11 +80,11 @@ flowchart LR
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.10.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.11.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
-`dsh-herdr@0.10.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
+`dsh-herdr@0.11.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
 
 ### 装进 CLI profile
 
@@ -166,7 +166,8 @@ agent；自己派出的任务显示最终消息、`result.md` 和按文件分组
 pane 输出。自有任务可以单个或批量 interrupt/close，动作复用 lifecycle 的 ownership gate，
 close 会先确认；diff 支持 hunk 高亮、整包复制和单文件复制。详情头部还能复制完整的
 Markdown review packet（PR / issue / summary 三种模板）、任务 cwd，或直接在系统文件管理器中
-reveal cwd；舰队搜索覆盖 name、cwd、kind、model 和 task id，并可按 machine + status 分组。
+reveal cwd 或用配置的编辑器打开；舰队搜索覆盖 name、cwd、kind、model 和 task id，
+可按 machine + status 分组，并支持 ArrowUp/ArrowDown/Enter 键盘导航；packet 复制保留 3 条历史。
 
 ![Herdr 面板](https://raw.githubusercontent.com/ahqrt/dsh-herdr/main/docs/assets/herdr-panel.png)
 

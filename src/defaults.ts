@@ -13,6 +13,9 @@ export interface PluginConfig {
   nativeSubagent: boolean;
   /** Provider name used by a dsh-tool-subagent row. */
   subagentName: string;
+  /** Command used by the panel's "open editor" action; empty disables it. */
+  editorCommand: string;
+  editorArgs: string[];
   aliasesFile: string;
   maxParallelAgents: number;
   queueTimeoutMs: number;
@@ -49,6 +52,8 @@ export const DEFAULT_CONFIG: PluginConfig = {
   defaultModel: "flash",
   nativeSubagent: true,
   subagentName: "herdr",
+  editorCommand: "",
+  editorArgs: [],
   aliasesFile: "~/.pi/agent/model-aliases.md",
   maxParallelAgents: 3,
   queueTimeoutMs: 300_000,

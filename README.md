@@ -8,7 +8,7 @@
 
 `dsh-herdr` is the reference bridge between [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) and [Herdr](https://herdr.dev). It turns Herdr into an external subagent runtime: DSH stays the orchestrator and reviewer, while pi / agy / claude / codex / … do the work in visible, steerable panes.
 
-> Status: `0.10.x`, validated on DSH `0.2.1-rc.2` (all nine tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`). The public surface is the nine `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
+> Status: `0.11.x`, validated on DSH `0.2.1-rc.2` (all nine tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`). The public surface is the nine `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -43,7 +43,7 @@ DSH subagents run in-process and share the harness model. Sometimes you want the
 | **Event waits** | An opt-in socket transport waits on `agent.wait` server-side; a connect failure falls back to the CLI. |
 | **Remote machines** | `machine` on spawn/list/result/message, via `herdr --machine`; SSH file bridge (`machineTargets`) removes the mount requirement. |
 | **Native subagent** | A `herdr` subagent provider routes a `dsh-tool-subagent` row through Herdr for native cards, catalog, and cancellation. |
-| **Web panel** | A `Herdr` right-sidebar tab: searchable/grouped fleet, read-only tails, per-file diff, packet templates, reveal-cwd, and bulk interrupt/close for owned tasks. |
+| **Web panel** | A `Herdr` right-sidebar tab: searchable/grouped fleet, read-only tails, per-file diff, packet templates/history, reveal/open-editor cwd, and bulk interrupt/close. |
 | **Diagnosis** | `herdr_doctor` checks binary, server, kinds, aliases, directories, topology, and pi in one call. |
 
 ---
@@ -80,11 +80,11 @@ The `desktop` profile is owned by the Electron app, so install it from **Plugins
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. Install the resulting `dsh-herdr-0.10.0.tgz` (or a `link:/path/to/checkout` spec while developing).
+2. Install the resulting `dsh-herdr-0.11.0.tgz` (or a `link:/path/to/checkout` spec while developing).
 3. Confirm `dsh.profile.bundles` contains `dsh-herdr`.
 4. Start a new session; `herdr_*` tools should be listed.
 
-`dsh-herdr@0.10.0` is [live on npm](https://www.npmjs.com/package/dsh-herdr). Tagged releases publish through the release workflow once the repository trusted publisher is configured (see [CONTRIBUTING](CONTRIBUTING.md#releases)).
+`dsh-herdr@0.11.0` is [live on npm](https://www.npmjs.com/package/dsh-herdr). Tagged releases publish through the release workflow once the repository trusted publisher is configured (see [CONTRIBUTING](CONTRIBUTING.md#releases)).
 
 ### Into a CLI profile
 
@@ -170,8 +170,10 @@ interrupted or closed from the detail header or in bulk; both actions reuse the
 lifecycle service's ownership gates, and close asks for confirmation. Diff hunks
 are highlighted, and the patch or a single file can be copied. The header can
 copy a Markdown review packet in PR, issue, or summary form, copy the task cwd,
-or reveal it in the OS file manager; the fleet can be searched by name, cwd,
-kind, model, and task id, and grouped by machine + status.
+open it in a configured editor, or reveal it in the OS file manager; the fleet
+can be searched by name, cwd, kind, model, and task id, grouped by machine +
+status, and driven with ArrowUp/ArrowDown/Enter. Packet copies keep a
+three-entry history.
 
 ![Herdr fleet panel](https://raw.githubusercontent.com/ahqrt/dsh-herdr/main/docs/assets/herdr-panel.png)
 

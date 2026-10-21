@@ -6,6 +6,18 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-21
+
+### Added
+
+- **Open editor**: an `editor` panel action spawns a configured command with
+  argv and the task cwd (no shell). `editorCommand`/`editorArgs` config; the
+  button is hidden while the command is empty.
+- **Packet history**: the last three copied packets are selectable from a
+  history dropdown.
+- **Keyboard navigation**: fleet rows are focusable; ArrowUp/ArrowDown moves
+  between rows and Enter/Space selects.
+
 ## [0.10.0] - 2026-10-21
 
 ### Added

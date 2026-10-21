@@ -147,6 +147,11 @@ async function action(
       json(res, 200, { ok: true, result });
       return;
     }
+    if (body.action === "editor") {
+      const result = await deps.reveal.openEditor(target);
+      json(res, 200, { ok: true, result });
+      return;
+    }
     if (body.action === "close") {
       const result = await deps.lifecycle.close({
         target,
@@ -156,7 +161,10 @@ async function action(
       json(res, 200, { ok: true, result });
       return;
     }
-    json(res, 400, { ok: false, error: 'action must be "interrupt", "reveal", or "close"' });
+    json(res, 400, {
+      ok: false,
+      error: 'action must be "interrupt", "reveal", "editor", or "close"',
+    });
   } catch (error) {
     sendError(res, error);
   }
@@ -245,6 +253,7 @@ async function taskDetail(deps: HerdrApiDeps, target: string) {
     finalMessage: cap(finalMessage),
     diff: cap(readLocalPatch(deps.paths, record.taskId)),
     worktree: record.worktree,
+    editorEnabled: deps.reveal.editorEnabled(),
   };
 }
 
