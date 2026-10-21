@@ -1,6 +1,7 @@
 import type { AgentResult, TaskRecord } from "../domain/types.js";
 import type { PluginConfig } from "../defaults.js";
-import type { GitService } from "../ports/store.js";
+import type { Paths } from "../domain/paths.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TransportPool } from "../ports/transports.js";
 export interface HarvestOptions {
     signal?: AbortSignal;
@@ -9,8 +10,9 @@ export interface HarvestOptions {
 }
 export interface HarvestDeps {
     transports: TransportPool;
-    git: GitService;
+    runtimes: MachineRuntimePool;
     config: PluginConfig;
+    paths: Paths;
 }
 export declare class HarvestService {
     private readonly deps;

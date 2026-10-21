@@ -16,9 +16,9 @@
 The Electron app owns its profile; `dsh plugin --profile desktop …` is rejected by design.
 
 1. Build or fetch the package:
-   - tarball: `pnpm pack` → `dsh-herdr-0.3.1.tgz` (or the release asset)
+   - tarball: `pnpm pack` → `dsh-herdr-0.4.0.tgz` (or the release asset)
    - link: the absolute checkout path
-   - npm: `dsh-herdr@0.3.1` (published)
+   - npm: `dsh-herdr@0.4.0` (published)
 2. Open **Plugins** in the app sidebar → install.
 3. Verify `package.json` in `~/.dsh/profiles/desktop/` lists `dsh-herdr` under `dependencies` **and** `dsh.profile.bundles`.
 4. The patch row appears in the composed profile:
@@ -70,9 +70,9 @@ The tarball contains `lib/`, `cordis.patch.yml`, `skill/`, `schema/`, and the do
 Herdr socket for each call and degrades to CLI when it cannot connect; `socket`
 is strict. The socket is local-only; remote machines always use `--machine`.
 
-Remote spawn additionally requires the machine's filesystem to be mounted
-locally (`sharedFilesystem`), because artifacts and the pi session are read with
-normal file I/O. Remote `list`/`read`/`message` work without a mount.
+Remote spawn needs file access: either `machineTargets: ["label=user@host"]`
+(SSH, key auth, `BatchMode=yes`) or a mounted filesystem (`sharedFilesystem`).
+The SSH bridge reads artifacts, the pi session, and the diff without a mount.
 
 ## Optional: install the delegation skill
 

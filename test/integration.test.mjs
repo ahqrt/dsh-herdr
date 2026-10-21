@@ -33,6 +33,9 @@ import { InboxService } from "../lib/services/inbox.js";
 import { TranscriptService } from "../lib/services/transcript.js";
 import { WorktreeService } from "../lib/services/worktree.js";
 import { MachineTransportPool } from "../lib/adapters/transport-pool.js";
+import { LocalMachineIo } from "../lib/adapters/machine/local-io.js";
+import { MachineRuntimePool } from "../lib/adapters/machine/runtime-pool.js";
+import { homedir } from "node:os";
 import { HerdrError } from "../lib/domain/errors.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -43,7 +46,14 @@ function git(cwd, ...args) {
   return execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" });
 }
 
-function setup() {
+function fakeSsh(dir) {
+  const path = join(dir, "fake-ssh");
+  writeFileSync(path, '#!/bin/sh\nshift 7\nexec /bin/sh -lc "$1"\n', "utf8");
+  chmodSync(path, 0o755);
+  return path;
+}
+
+function setup(options = {}) {
   const root = mkdtempSync(join(tmpdir(), "herdr-e2e-"));
   const repo = join(root, "repo");
   execFileSync("mkdir", ["-p", repo]);
@@ -64,6 +74,7 @@ function setup() {
     FAKE_HERDR_CWD: repo,
   };
 
+  const sshBin = options.remote ? fakeSsh(root) : undefined;
   const config = resolveConfig({
     herdrBin: fake,
     homeDir: join(root, "home"),
@@ -71,6 +82,13 @@ function setup() {
     defaultModel: "flash",
     allowCwd: [repo],
     defaultTimeoutMs: 30_000,
+    ...(options.remote
+      ? {
+          machines: ["m1"],
+          machineTargets: [`m1=${sshBin}`],
+          remoteHomeDir: join(root, "remote"),
+        }
+      : {}),
   });
   const paths = resolvePaths(config);
   const cli = new HerdrCli(fake, env);
@@ -83,13 +101,22 @@ function setup() {
     config,
     (machine) => new HerdrCliTransport(new HerdrCli(fake, env, machine)),
   );
+  const localIo = new LocalMachineIo();
+  const runtimes = new MachineRuntimePool({
+    config,
+    paths,
+    localGit: gitService,
+    localIo,
+    sshBin,
+    env: process.env,
+  });
   const topology = new TopologyService({ transports, store, config, env: {} });
-  const worktree = new WorktreeService({ git: gitService, config, paths });
-  const harvest = new HarvestService({ transports, git: gitService, config });
+  const worktree = new WorktreeService({ runtimes });
+  const harvest = new HarvestService({ transports, runtimes, config, paths });
   const spawn = new SpawnService({
     transports,
+    runtimes,
     store,
-    git: gitService,
     topology,
     harvest,
     worktree,
@@ -101,9 +128,9 @@ function setup() {
   });
   const message = new MessageService({ transports, store, audit });
   const lifecycle = new LifecycleService({ transports, store, audit, worktree });
-  const doctor = new DoctorService({ transports, config, paths, env: {} });
-  const inbox = new InboxService({ store });
-  const transcript = new TranscriptService(store);
+  const doctor = new DoctorService({ transports, runtimes, config, paths, env: {} });
+  const inbox = new InboxService({ store, runtimes });
+  const transcript = new TranscriptService(store, runtimes);
 
   return {
     root,
@@ -386,6 +413,28 @@ test("isolated spawn runs in a fresh worktree and close can remove it", {
   }
 });
 
+test("remote spawn uses SSH for artifacts, session, and diff", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup({ remote: true });
+  try {
+    const result = await ctx.spawn.spawn({
+      prompt: "run over ssh without a mount",
+      cwd: ctx.repo,
+      kind: "pi",
+      model: "flash",
+      machine: "m1",
+    });
+    assert.equal(result.status, "completed");
+    assert.equal(result.agent.machine, "m1");
+    assert.ok(result.result.path.startsWith(join(ctx.root, "remote")));
+    assert.ok(result.diff.files.includes("work.txt"));
+    assert.equal((await ctx.store.find(result.taskId)).machine, "m1");
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
 test("a spawn on a configured shared-filesystem machine records the machine", {
   skip: windows && "fake herdr needs a POSIX shebang",
 }, async () => {
@@ -410,8 +459,7 @@ test("a spawn on a configured shared-filesystem machine records the machine", {
         kind: "pi",
         machine: "m2",
       }),
-      (error) =>
-        error instanceof HerdrError && /not declared as sharing a filesystem/.test(error.message),
+      (error) => error instanceof HerdrError && /no file access configured/.test(error.message),
     );
 
     await assert.rejects(

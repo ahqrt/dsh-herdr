@@ -25,8 +25,12 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 
     # enabled herdr --machine profiles; only these labels are reachable
     machines: []
-    # machines whose filesystem is mounted here (required for spawn)
+    # SSH file access for remote machines: "label=user@host"
+    machineTargets: []
+    # optional: machines whose filesystem is mounted here (instead of SSH)
     sharedFilesystem: []
+    # remote root for tasks/worktrees (under the remote $HOME)
+    remoteHomeDir: ~/.dsh/herdr
 
     # auto: split when DSH runs inside Herdr, otherwise a dedicated workspace
     topology: auto
@@ -43,7 +47,9 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `transport` | `cli` \| `auto` \| `socket` | `cli` | `auto` tries the local socket and degrades to CLI; `socket` never falls back. |
 | `socketPath` | string | `~/.config/herdr/herdr.sock` | Local socket. `HERDR_SOCKET_PATH` overrides. |
 | `machines` | string[] | `[]` | Herdr `--machine` labels/ids the tools may target. |
-| `sharedFilesystem` | string[] | `[]` | Machine labels with a locally mounted filesystem. Remote **spawn** requires this; `list`/`read`/`message` do not. |
+| `machineTargets` | string[] | `[]` | Remote machines with SSH file access, as `label=user@host`. Needed for remote spawn/harvest without a mount. |
+| `sharedFilesystem` | string[] | `[]` | Machine labels whose filesystem is mounted locally; the fallback when no SSH target is configured. |
+| `remoteHomeDir` | string | `~/.dsh/herdr` | Task/worktree root on SSH machines, resolved against the remote `$HOME`. |
 | `defaultKind` | string | `pi` | Kind used when `kind` is omitted. |
 | `defaultModel` | string | `flash` | Alias/ID used for `kind=pi` when `model` is omitted. Empty = pi's own default. |
 | `aliasesFile` | string | `~/.pi/agent/model-aliases.md` | The markdown alias table. Missing file = only raw IDs resolve. |
@@ -100,11 +106,17 @@ the CLI.
 
 ## Remote machines
 
-Add an existing Herdr machine profile to `machines` to target it. A remote
-delegation needs the remote filesystem mounted locally because artifacts,
-`result.md`, and the pi session path are read with ordinary file I/O. Without a
-mount, use remote `list`/`read`/`message` for observation and steering, and keep
-spawn local. Doctor checks every configured machine.
+Add an existing Herdr machine profile to `machines` to target it. For remote
+spawn, give the plugin file access in one of two ways:
+
+- `machineTargets: ["builder-01=me@builder.example.com"]` — the plugin reads and
+  writes task files over SSH (`BatchMode=yes`, key auth required). No mount.
+- `sharedFilesystem: ["builder-01"]` — the remote paths are already visible
+  locally at the same absolute paths.
+
+Without either, remote spawn is refused with a config error; `list`, `read`, and
+`message` still work because they only need the Herdr API. Doctor checks the
+machine reachability and the file-access mode.
 
 ## Concurrency
 

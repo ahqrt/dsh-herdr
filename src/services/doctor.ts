@@ -13,6 +13,7 @@ import {
 import { ensureDir, type Paths } from "../domain/paths.js";
 import { formatVersion, MIN_HERDR_VERSION } from "../domain/version.js";
 import type { PluginConfig } from "../defaults.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TransportPool } from "../ports/transports.js";
 
 export type CheckStatus = "ok" | "warn" | "fail";
@@ -40,6 +41,7 @@ export interface DoctorReport {
 
 export interface DoctorDeps {
   transports: TransportPool;
+  runtimes: MachineRuntimePool;
   config: PluginConfig;
   paths: Paths;
   env: NodeJS.ProcessEnv;
@@ -167,6 +169,26 @@ export class DoctorService {
         status ? "reachable through herdr --machine" : "no response from herdr --machine",
       );
       if (!status) next.push(`check \`herdr --machine ${machine} status\``);
+
+      const access = this.deps.runtimes.hasRemoteTarget(machine)
+        ? "ssh"
+        : this.deps.runtimes.sharesFilesystem(machine)
+          ? "mounted"
+          : "missing";
+      add(
+        access === "missing" ? "fail" : "ok",
+        `machine ${machine} files`,
+        access === "ssh"
+          ? "SSH file access configured"
+          : access === "mounted"
+            ? "resolved through a local mount"
+            : "no machineTargets or sharedFilesystem entry",
+      );
+      if (access === "missing") {
+        next.push(
+          `add machineTargets: ["${machine}=user@host"] or list "${machine}" in sharedFilesystem`,
+        );
+      }
     }
 
     const piVersion = await versionOf("pi");

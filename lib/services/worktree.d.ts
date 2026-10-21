@@ -1,11 +1,7 @@
 import type { WorktreeInfo } from "../domain/types.js";
-import type { PluginConfig } from "../defaults.js";
-import type { Paths } from "../domain/paths.js";
-import type { GitService } from "../ports/store.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 export interface WorktreeDeps {
-    git: GitService;
-    config: PluginConfig;
-    paths: Paths;
+    runtimes: MachineRuntimePool;
 }
 export declare class WorktreeService {
     private readonly deps;
@@ -13,7 +9,8 @@ export declare class WorktreeService {
     create(input: {
         repoCwd: string;
         taskId: string;
+        machine?: string;
     }): Promise<WorktreeInfo>;
-    remove(info: WorktreeInfo, force?: boolean): Promise<void>;
+    remove(info: WorktreeInfo, force?: boolean, machine?: string): Promise<void>;
 }
 //# sourceMappingURL=worktree.d.ts.map

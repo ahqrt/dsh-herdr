@@ -28,8 +28,12 @@ export interface PluginConfig {
   allowCwd: string[];
   /** Enabled Herdr `--machine` profiles this plugin may target. */
   machines: string[];
-  /** Machine labels whose filesystem is mounted locally (spawn requires this). */
+  /** Machine labels whose filesystem is mounted locally. */
   sharedFilesystem: string[];
+  /** Remote machines with SSH file access, as `label=ssh-target`. */
+  machineTargets: string[];
+  /** Remote root for tasks/worktrees (resolved against the remote $HOME). */
+  remoteHomeDir: string;
 }
 
 export const DEFAULT_CONFIG: PluginConfig = {
@@ -58,6 +62,8 @@ export const DEFAULT_CONFIG: PluginConfig = {
   allowCwd: [],
   machines: [],
   sharedFilesystem: [],
+  machineTargets: [],
+  remoteHomeDir: "~/.dsh/herdr",
 };
 
 /** Merge loader input over defaults and coerce the knobs that have ranges. */

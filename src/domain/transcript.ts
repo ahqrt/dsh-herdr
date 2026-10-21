@@ -44,16 +44,8 @@ function toolCallNames(content: unknown): string[] {
   return names;
 }
 
-/** Read and normalize the whole transcript. */
-export function readTranscript(sessionPath: string): TranscriptMessage[] {
-  if (!sessionPath || !existsSync(sessionPath)) return [];
-  let text: string;
-  try {
-    text = readFileSync(sessionPath, "utf8");
-  } catch {
-    return [];
-  }
-
+/** Normalize session JSONL text into transcript turns. */
+export function readTranscriptFromText(text: string): TranscriptMessage[] {
   const { entries } = parseSessionEntries(text);
   const messages: TranscriptMessage[] = [];
   for (const entry of entries) {
@@ -80,6 +72,18 @@ export function readTranscript(sessionPath: string): TranscriptMessage[] {
     });
   }
   return messages;
+}
+
+/** Read a session file and normalize the whole transcript. */
+export function readTranscript(sessionPath: string): TranscriptMessage[] {
+  if (!sessionPath || !existsSync(sessionPath)) return [];
+  let text: string;
+  try {
+    text = readFileSync(sessionPath, "utf8");
+  } catch {
+    return [];
+  }
+  return readTranscriptFromText(text);
 }
 
 /** One page, clamped to the available range. */

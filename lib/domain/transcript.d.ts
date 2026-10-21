@@ -10,7 +10,9 @@ export interface TranscriptPage {
     messages: TranscriptMessage[];
     total: number;
 }
-/** Read and normalize the whole transcript. */
+/** Normalize session JSONL text into transcript turns. */
+export declare function readTranscriptFromText(text: string): TranscriptMessage[];
+/** Read a session file and normalize the whole transcript. */
 export declare function readTranscript(sessionPath: string): TranscriptMessage[];
 /** One page, clamped to the available range. */
 export declare function pageTranscript(sessionPath: string, options?: {

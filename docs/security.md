@@ -19,9 +19,11 @@ flowchart LR
 - **The OS is the user's.** Children run with the user's permissions; the plugin cannot sandbox them.
 - **The local socket is private.** The socket adapter speaks an undocumented
   protocol; it is local-only, opt-in, and never used for remote machines.
-- **Remote machines are limited by config.** `machines` is an allowlist;
-  spawn additionally requires `sharedFilesystem`. SSH credentials belong to
-  OpenSSH and Herdr, never to this plugin.
+- **Remote machines are limited by config.** `machines` is an allowlist; file
+  access comes from `machineTargets` (SSH) or `sharedFilesystem`. The SSH bridge
+  runs with `BatchMode=yes`, never stores credentials, and quotes every path;
+  OpenSSH owns keys, agents, and host-key trust. A remote delegation still runs
+  commands with the remote user's permissions.
 
 ## Threats and mitigations
 

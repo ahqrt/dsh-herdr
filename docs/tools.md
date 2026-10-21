@@ -36,7 +36,7 @@ Starts a pane, starts an agent, submits a task envelope, waits for a settled sta
 | `agent_args` | string[] | — | Raw flags after `--`, for kinds without first-class support. |
 | `client_task_id` | string | — | Idempotency key; a repeat returns the existing task. |
 | `isolated` | boolean | `false` | Run in a fresh git worktree (`dsh/<taskId>`); the path is returned. |
-| `machine` | string | local | Herdr `--machine` label enabled in `machines`; requires `sharedFilesystem` for spawn. |
+| `machine` | string | local | Herdr `--machine` label enabled in `machines`; needs `machineTargets` (SSH) or `sharedFilesystem` for spawn. |
 
 **Behavior**
 
@@ -154,9 +154,9 @@ fallback.
 
 `machine` is accepted on `spawn`, `get_result` (external targets), `message`, and
 `list`. A spawned task stores its machine; later `get_result`/`close`/`interrupt`
-resolve it automatically. Remote **spawn** requires the machine to be listed in
-`sharedFilesystem`, because artifacts and the pi session are read with local
-file I/O. Remote `list`/`read`/`message` work without a mount.
+resolve it automatically. Remote **spawn** needs file access: `machineTargets` (SSH) or
+`sharedFilesystem` (mount). The SSH bridge reads artifacts and the pi session
+and writes the diff patch locally; `list`/`read`/`message` only need the API.
 
 ## Protocol headers
 

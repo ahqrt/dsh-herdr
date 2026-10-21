@@ -1,6 +1,7 @@
 import { type AliasSummary } from "../domain/aliases.js";
 import { type Paths } from "../domain/paths.js";
 import type { PluginConfig } from "../defaults.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TransportPool } from "../ports/transports.js";
 export type CheckStatus = "ok" | "warn" | "fail";
 export interface DoctorCheck {
@@ -24,6 +25,7 @@ export interface DoctorReport {
 }
 export interface DoctorDeps {
     transports: TransportPool;
+    runtimes: MachineRuntimePool;
     config: PluginConfig;
     paths: Paths;
     env: NodeJS.ProcessEnv;

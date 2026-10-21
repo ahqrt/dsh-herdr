@@ -11,6 +11,10 @@ export interface Paths {
 export declare function expandHome(value: string, home?: string): string;
 export declare function resolvePaths(config: Partial<PluginConfig>): Paths;
 export declare function ensureDir(dir: string): string;
+/** Join for a local or remote (POSIX) runtime. */
+export declare function joinFor(runtime: {
+    remote: boolean;
+}, ...parts: string[]): string;
 /** Stable key for a working directory (used to reuse the DSH workspace). */
 export declare function repoKey(cwd: string): string;
 /** The workspace label DSH uses for a repository. */

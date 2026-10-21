@@ -31,6 +31,21 @@ has a place below, roughly in order of value.
 - **Client UI panel**: a fleet view and per-task diff viewer, consuming the same
   `AgentResult` contract.
 
+## 0.4 — remote file bridge (shipped in 0.4.0)
+
+- **SSH-backed runtime**: `machineTargets` gives spawn/harvest/inbox/transcript
+  and worktrees access to the remote filesystem without a mount.
+- **Doctor file-access mode**: `ssh`, `mounted`, or missing.
+- **Mount remains a fallback** via `sharedFilesystem`.
+
+## 0.5 — hosts and polish
+
+- **Native subagent provider**: wrap the services in DSH's `ctx.subagents`
+  provider so delegations show as first-class subagent cards.
+- **Client UI panel**: a fleet view and per-task diff viewer consuming the same
+  `AgentResult`.
+- **Remote Windows**: only if Herdr supports it and a POSIX shell is available.
+
 ## 1.0 — stable contract
 
 - Freeze the tool names, parameters, `AgentResult` fields, and error codes.

@@ -73,11 +73,14 @@ the socket is the problem, and run `herdr status` for protocol drift.
 ## Symptom: a remote machine is refused
 
 - `machine "x" is not enabled` → add the label to `machines`.
-- `not declared as sharing a filesystem` → remote spawn needs a mounted
-  filesystem for artifacts and the pi session; add it to `sharedFilesystem`, or
-  use remote `list`/`read`/`message` only.
+- `has no file access configured` → add `machineTargets: ["label=user@host"]`
+  for SSH, or `sharedFilesystem` if the paths are mounted.
+- SSH failures: `BatchMode=yes` means no password prompt. Check
+  `ssh -o BatchMode=yes <target> true` works with your key/agent and that the
+  host key is trusted. The remote shell must be POSIX (`sh`, `cat`,
+  `mkdir -p`, `stat`). Windows remote hosts are not supported.
 - `herdr --machine <label> status` should answer; doctor checks each configured
-  machine.
+  machine and its file-access mode (`ssh` or `mounted`).
 
 ## Symptom: worktree creation fails
 

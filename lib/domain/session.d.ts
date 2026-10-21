@@ -14,6 +14,8 @@ export declare function parseSessionEntries(text: string): ParsedSession;
 export declare function assistantText(message: unknown): string;
 /** The last assistant message in parsed entries, or null. */
 export declare function extractLastAssistant(entries: Record<string, unknown>[]): ExtractedResult | null;
+/** Extract the last assistant message from session JSONL text. */
+export declare function extractSessionResultFromText(text: string): ExtractedResult | null;
 /** Read a session file and extract its last assistant message. */
 export declare function extractSessionResult(sessionPath: string): ExtractedResult | null;
 /** Mine typed failure info: pi marks an exhausted turn with stopReason=error. */
@@ -23,6 +25,8 @@ export declare function minedAssistantError(message: unknown): {
 } | null;
 /** mtime in ms, or 0 when the file is missing. */
 export declare function sessionMtime(sessionPath: string | undefined): number;
-/** Count assistant messages / tool calls / output tokens. */
+/** Count assistant messages / tool calls / output tokens from session text. */
+export declare function sessionStatsFromText(text: string): SessionUsage | undefined;
+/** Read a session file and count its usage. */
 export declare function sessionStats(sessionPath: string | undefined): SessionUsage | undefined;
 //# sourceMappingURL=session.d.ts.map

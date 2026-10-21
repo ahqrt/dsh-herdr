@@ -69,6 +69,11 @@ export function extractLastAssistant(entries: Record<string, unknown>[]): Extrac
   return null;
 }
 
+/** Extract the last assistant message from session JSONL text. */
+export function extractSessionResultFromText(text: string): ExtractedResult | null {
+  return extractLastAssistant(parseSessionEntries(text).entries);
+}
+
 /** Read a session file and extract its last assistant message. */
 export function extractSessionResult(sessionPath: string): ExtractedResult | null {
   if (!sessionPath || !existsSync(sessionPath)) return null;
@@ -78,7 +83,7 @@ export function extractSessionResult(sessionPath: string): ExtractedResult | nul
   } catch {
     return null;
   }
-  return extractLastAssistant(parseSessionEntries(text).entries);
+  return extractSessionResultFromText(text);
 }
 
 /** Mine typed failure info: pi marks an exhausted turn with stopReason=error. */
@@ -106,15 +111,8 @@ export function sessionMtime(sessionPath: string | undefined): number {
   }
 }
 
-/** Count assistant messages / tool calls / output tokens. */
-export function sessionStats(sessionPath: string | undefined): SessionUsage | undefined {
-  if (!sessionPath || !existsSync(sessionPath)) return undefined;
-  let text: string;
-  try {
-    text = readFileSync(sessionPath, "utf8");
-  } catch {
-    return undefined;
-  }
+/** Count assistant messages / tool calls / output tokens from session text. */
+export function sessionStatsFromText(text: string): SessionUsage | undefined {
   const { entries } = parseSessionEntries(text);
   let assistant = 0;
   let toolCalls = 0;
@@ -141,4 +139,16 @@ export function sessionStats(sessionPath: string | undefined): SessionUsage | un
     }
   }
   return { assistant, toolCalls, outputTokens };
+}
+
+/** Read a session file and count its usage. */
+export function sessionStats(sessionPath: string | undefined): SessionUsage | undefined {
+  if (!sessionPath || !existsSync(sessionPath)) return undefined;
+  let text: string;
+  try {
+    text = readFileSync(sessionPath, "utf8");
+  } catch {
+    return undefined;
+  }
+  return sessionStatsFromText(text);
 }

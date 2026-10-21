@@ -13,6 +13,12 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.4.0 additions
+
+Additive: `machineTargets`, `remoteHomeDir`, and SSH-backed task/session/diff
+access for remote spawn. Remote machines must be POSIX with `sh`, `cat`,
+`mkdir -p`, and `stat`; Windows remotes are unsupported.
+
 ## 0.3.0 additions
 
 Additive: `transport`, `socketPath`, `machines`, `sharedFilesystem`,

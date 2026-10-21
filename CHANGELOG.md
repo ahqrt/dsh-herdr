@@ -6,6 +6,23 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-21
+
+### Added
+
+- **SSH file bridge** for remote machines: `machineTargets: ["label=user@host"]`
+  gives `spawn`/`harvest`/`inbox`/`transcript`/worktree access to the remote
+  filesystem without a local mount. Artifacts and pi sessions are read over
+  SSH; the diff patch is written locally for review.
+- `remoteHomeDir` (default `~/.dsh/herdr`) for remote task/worktree roots.
+- Doctor reports each machine's file access (`ssh`, `mounted`, or missing).
+
+### Changed
+
+- Remote spawn no longer requires `sharedFilesystem`; a mount is now the
+  fallback when no SSH target is configured.
+- SSH runs with `BatchMode=yes`; password prompts fail fast instead of hanging.
+
 ## [0.3.1] - 2026-10-21
 
 ### Fixed

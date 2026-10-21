@@ -2,7 +2,7 @@
 // lives under the user's DSH home, never in the project checkout.
 
 import { homedir } from "node:os";
-import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, isAbsolute, join, posix, relative, resolve } from "node:path";
 import { mkdirSync } from "node:fs";
 import { DEFAULT_CONFIG, type PluginConfig } from "../defaults.js";
 
@@ -46,6 +46,11 @@ function resolveUnder(root: string, value: string): string {
 export function ensureDir(dir: string): string {
   mkdirSync(dir, { recursive: true });
   return dir;
+}
+
+/** Join for a local or remote (POSIX) runtime. */
+export function joinFor(runtime: { remote: boolean }, ...parts: string[]): string {
+  return runtime.remote ? posix.join(...parts) : join(...parts);
 }
 
 /** Stable key for a working directory (used to reuse the DSH workspace). */

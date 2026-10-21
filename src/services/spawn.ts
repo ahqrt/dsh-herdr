@@ -7,20 +7,22 @@
 //     an explicit next action;
 //   - `clientTaskId` makes a retried tool call idempotent.
 
-import { existsSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadAliases, resolveModelSpec } from "../domain/aliases.js";
 import { HerdrError } from "../domain/errors.js";
 import { AGENT_NAME_RE, makeAgentName, normalizeAgentName, shortHash } from "../domain/ids.js";
 import { buildAgentArgs, kindCaps } from "../domain/launch.js";
-import { ensureDir, expandHome, isWithin } from "../domain/paths.js";
+import { expandHome, isWithin, joinFor } from "../domain/paths.js";
 import { artifactPaths, buildTaskPrompt } from "../domain/prompt.js";
 import type { AgentInfo, AgentResult, SpawnInput, TaskRecord } from "../domain/types.js";
 import type { PluginConfig } from "../defaults.js";
 import type { AuditLog, GitService, TaskStore } from "../ports/store.js";
 import type { HerdrTransport } from "../ports/transport.js";
+import { shellQuote } from "../adapters/machine/ssh-io.js";
 import type { TransportPool } from "../ports/transports.js";
 import type { Paths } from "../domain/paths.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { Clock, IdSource } from "../domain/ids.js";
 import type { HarvestService } from "./harvest.js";
 import type { TopologyService } from "./topology.js";
@@ -29,7 +31,7 @@ import type { WorktreeService } from "./worktree.js";
 export interface SpawnDeps {
   transports: TransportPool;
   store: TaskStore;
-  git: GitService;
+  runtimes: MachineRuntimePool;
   topology: TopologyService;
   harvest: HarvestService;
   worktree: WorktreeService;
@@ -61,17 +63,7 @@ export class SpawnService {
     }
 
     const transport = this.deps.transports.resolve(input.machine);
-    if (input.machine && !this.deps.transports.sharesFilesystem(input.machine)) {
-      throw new HerdrError(
-        "VALIDATION_ERROR",
-        `machine "${input.machine}" is not declared as sharing a filesystem with this host`,
-        {
-          remediation:
-            "remote delegation needs a mounted filesystem for artifacts/session paths; add the label to sharedFilesystem, or only list/read/message remote agents",
-        },
-      );
-    }
-
+    const runtime = await this.deps.runtimes.resolve(input.machine);
     if (input.clientTaskId) {
       const existing = (await store.list()).find(
         (task) => task.clientTaskId === input.clientTaskId,
@@ -79,9 +71,16 @@ export class SpawnService {
       if (existing) return this.deps.harvest.harvest(existing, { signal: input.signal });
     }
 
-    let cwd = resolve(input.cwd);
+    let cwd = runtime.remote ? input.cwd : resolve(input.cwd);
     const repoCwd = cwd;
-    if (!existsSync(cwd) || !statSync(cwd).isDirectory()) {
+    if (runtime.remote) {
+      const probe = await runtime.io.exec(`test -d ${shellQuote(cwd)}`, { timeoutMs: 15_000 });
+      if (probe.code !== 0) {
+        throw new HerdrError("VALIDATION_ERROR", `cwd does not exist on ${input.machine}: ${cwd}`, {
+          remediation: "pass an absolute path to an existing directory on the remote machine",
+        });
+      }
+    } else if (!existsSync(cwd) || !statSync(cwd).isDirectory()) {
       throw new HerdrError("VALIDATION_ERROR", `cwd does not exist or is not a directory: ${cwd}`, {
         remediation: "pass an absolute path to an existing project directory",
       });
@@ -153,11 +152,15 @@ export class SpawnService {
     const taskId = ids.taskId(clock.now());
     let worktree;
     if (input.isolated) {
-      worktree = await this.deps.worktree.create({ repoCwd, taskId });
+      worktree = await this.deps.worktree.create({
+        repoCwd,
+        taskId,
+        machine: input.machine,
+      });
       cwd = worktree.path;
     }
-    const artifactDir = resolve(paths.artifactsRoot, taskId);
-    ensureDir(artifactDir);
+    const artifactDir = joinFor(runtime, runtime.artifactsRoot, taskId);
+    await runtime.io.mkdirp(artifactDir);
     const artifacts = artifactPaths(artifactDir);
     const timeoutMs = Math.min(
       3_600_000,
@@ -172,7 +175,7 @@ export class SpawnService {
       timeoutMs,
       kind,
     });
-    writeFileSync(artifacts.prompt, promptText, "utf8");
+    await runtime.io.writeText(artifacts.prompt, promptText);
 
     const slot = await this.waitForSlot(input.signal);
     const now = clock.now();
@@ -193,7 +196,7 @@ export class SpawnService {
       worktree,
       machine: input.machine,
       clientTaskId: input.clientTaskId,
-      baseline: await this.deps.git.baseline(cwd).catch(() => undefined),
+      baseline: await runtime.git.baseline(cwd).catch(() => undefined),
     };
     try {
       await store.put(record);

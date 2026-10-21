@@ -3,11 +3,11 @@
 // `wait` is a long-poll over the files: no background watcher, no event loop
 // to leak. A read returns as soon as any task has unconsumed messages.
 
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { HerdrError } from "../domain/errors.js";
+import { joinFor } from "../domain/paths.js";
 import { lineCount, parseInbox, type InboxMessage } from "../domain/inbox.js";
 import type { TaskRecord, TaskStatus } from "../domain/types.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
 
 export interface InboxEntry extends InboxMessage {
@@ -36,6 +36,7 @@ export interface InboxReadResult {
 
 export interface InboxDeps {
   store: TaskStore;
+  runtimes: MachineRuntimePool;
 }
 
 export class InboxService {
@@ -50,7 +51,7 @@ export class InboxService {
     for (;;) {
       if (input.signal?.aborted) throw new HerdrError("ABORTED", "inbox read aborted");
       const tasks = await this.targets(input.target);
-      const snapshot = this.snapshot(tasks, limit);
+      const snapshot = await this.snapshot(tasks, limit);
 
       if (snapshot.messages.length > 0) {
         if (input.consume !== false) await this.consume(snapshot.offsets);
@@ -87,21 +88,17 @@ export class InboxService {
     return (await this.deps.store.list()).filter((task) => task.status !== "closed");
   }
 
-  private snapshot(tasks: TaskRecord[], limit: number) {
+  private async snapshot(tasks: TaskRecord[], limit: number) {
     const messages: InboxEntry[] = [];
     const offsets: { taskId: string; offset: number }[] = [];
     let pendingTotal = 0;
     let malformed = 0;
 
     for (const task of tasks) {
-      const path = join(task.artifactDir, "inbox.ndjson");
-      if (!existsSync(path)) continue;
-      let text: string;
-      try {
-        text = readFileSync(path, "utf8");
-      } catch {
-        continue;
-      }
+      const runtime = await this.deps.runtimes.resolve(task.machine);
+      const path = joinFor(runtime, task.artifactDir, "inbox.ndjson");
+      const text = await runtime.io.readText(path);
+      if (text === undefined) continue;
       const parsed = parseInbox(text);
       malformed += parsed.malformed;
       const offset = Math.min(task.inboxOffset ?? 0, lineCount(text));

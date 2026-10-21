@@ -85,7 +85,11 @@ Consequences:
 | `src/adapters/herdr/transport.ts` | Response shapes → domain operations (CLI). |
 | `src/adapters/herdr/socket-client.ts` | One-connection-per-request socket client, typed errors. |
 | `src/adapters/herdr/socket-transport.ts` | Socket transport with a connect-only CLI fallback. |
-| `src/adapters/transport-pool.ts` | Per-machine transport selection and shared-filesystem policy. |
+| `src/adapters/transport-pool.ts` | Per-machine transport selection. |
+| `src/adapters/machine/local-io.ts` | `MachineIo` over node:fs. |
+| `src/adapters/machine/ssh-io.ts` | `MachineIo` over `ssh target sh -lc`, stdin writes, quoted paths. |
+| `src/adapters/machine/remote-git.ts` | `GitService` over the SSH bridge; patch written locally. |
+| `src/adapters/machine/runtime-pool.ts` | Local / mounted / SSH runtime per machine. |
 | `src/adapters/fs/store.ts` | Atomic, locked, versioned state file; rotating audit. |
 | `src/adapters/fs/memory-store.ts` | Test/embed store. |
 | `src/adapters/git/local.ts` | Baseline and bounded diff. |
@@ -161,9 +165,10 @@ A pi session file is append-only across turns. Harvest only accepts its last ass
 - **Remote:** one CLI transport per `--machine` label, cached by the pool.
   Records carry `machine`; services resolve it from the record, so a handle
   remains correct after a restart.
-- **Spawn on a remote machine** requires `sharedFilesystem`, because the
-  harvest/diff/session readers use local file APIs. Observation and messaging
-  work without it.
+- **File access** for a remote machine is a `MachineRuntime`: either an SSH
+  bridge (`machineTargets: ["label=user@host"]`) or a local mount
+  (`sharedFilesystem`). Spawn/harvest/inbox/transcript/worktree all go through
+  it; the diff patch is written locally for the reviewer.
 
 ## Persistence
 

@@ -1,11 +1,11 @@
 // Paged access to a child's pi session. `herdr_get_agent_result` gives the
 // final message; this gives the turns that produced it.
 
-import { existsSync } from "node:fs";
 import { HerdrError } from "../domain/errors.js";
-import { pageTranscript } from "../domain/transcript.js";
+import { readTranscriptFromText } from "../domain/transcript.js";
 import type { TranscriptMessage } from "../domain/transcript.js";
 import type { TaskRecord } from "../domain/types.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
 
 export interface TranscriptReadInput {
@@ -28,12 +28,17 @@ export interface TranscriptReadResult {
 const MAX_MESSAGE_CHARS = 6_000;
 
 export class TranscriptService {
-  constructor(private readonly store: TaskStore) {}
+  constructor(
+    private readonly store: TaskStore,
+    private readonly runtimes: MachineRuntimePool,
+  ) {}
 
   async read(input: TranscriptReadInput): Promise<TranscriptReadResult> {
     const record = await this.resolve(input.target);
     const sessionPath = record.sessionPath;
-    if (!sessionPath || !existsSync(sessionPath)) {
+    const runtime = await this.runtimes.resolve(record.machine);
+    const text = sessionPath ? await runtime.io.readText(sessionPath) : undefined;
+    if (!sessionPath || text === undefined) {
       throw new HerdrError(
         "NO_TRANSCRIPT",
         `task ${record.taskId} (${record.kind}) has no readable pi session file`,
@@ -44,7 +49,10 @@ export class TranscriptService {
       );
     }
 
-    const page = pageTranscript(sessionPath, { from: input.from, limit: input.limit });
+    const all = readTranscriptFromText(text);
+    const from = Math.max(0, Math.trunc(input.from ?? 0));
+    const limit = Math.max(1, Math.min(100, Math.trunc(input.limit ?? 20)));
+    const page = { messages: all.slice(from, from + limit), total: all.length };
     const messages = page.messages.map((message) =>
       message.text.length > MAX_MESSAGE_CHARS
         ? {

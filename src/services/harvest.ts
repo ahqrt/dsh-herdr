@@ -8,14 +8,13 @@
 // Diff evidence is collected from git since the spawn baseline. A session
 // message older than the prompt is ignored: it belongs to a previous turn.
 
-import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { HerdrError } from "../domain/errors.js";
 import { firstLine, parseResultMarkdown } from "../domain/result-md.js";
 import {
-  extractSessionResult,
+  extractSessionResultFromText,
   minedAssistantError,
-  sessionMtime,
-  sessionStats,
+  sessionStatsFromText,
 } from "../domain/session.js";
 import { nextActionFor } from "../domain/status.js";
 import type {
@@ -28,7 +27,8 @@ import type {
 } from "../domain/types.js";
 import { artifactPaths } from "../domain/prompt.js";
 import type { PluginConfig } from "../defaults.js";
-import type { GitService } from "../ports/store.js";
+import type { Paths } from "../domain/paths.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TransportPool } from "../ports/transports.js";
 
 export interface HarvestOptions {
@@ -39,16 +39,18 @@ export interface HarvestOptions {
 
 export interface HarvestDeps {
   transports: TransportPool;
-  git: GitService;
+  runtimes: MachineRuntimePool;
   config: PluginConfig;
+  paths: Paths;
 }
 
 export class HarvestService {
   constructor(private readonly deps: HarvestDeps) {}
 
   async harvest(record: TaskRecord, options: HarvestOptions = {}): Promise<AgentResult> {
-    const { git, config } = this.deps;
+    const { config } = this.deps;
     const transport = this.deps.transports.resolve(record.machine);
+    const runtime = await this.deps.runtimes.resolve(record.machine);
     const target = record.name || record.paneId || record.taskId;
     const paths = artifactPaths(record.artifactDir);
 
@@ -63,24 +65,23 @@ export class HarvestService {
     const herdrStatus = agent?.status;
     const sessionPath = agent?.sessionPath ?? record.sessionPath;
     const promptedAt = record.promptedAt ?? 0;
-    const sessionIsFresh =
-      !record.external && (!promptedAt || sessionMtime(sessionPath) >= promptedAt - 1_000);
-    const sessionResult = sessionIsFresh ? extractSessionResult(sessionPath ?? "") : null;
+    const sessionMtime = sessionPath ? await runtime.io.mtime(sessionPath) : 0;
+    const sessionIsFresh = !record.external && (!promptedAt || sessionMtime >= promptedAt - 1_000);
+    const sessionText =
+      sessionIsFresh && sessionPath ? await runtime.io.readText(sessionPath) : undefined;
+    const sessionResult = sessionText ? extractSessionResultFromText(sessionText) : null;
     const sessionError = record.external ? null : minedAssistantError(sessionResult?.message);
-    const usage = sessionIsFresh ? sessionStats(sessionPath) : undefined;
+    const usage = sessionText ? sessionStatsFromText(sessionText) : undefined;
 
     let meta: ResultMeta = {};
     let resultBody = "";
     let resultPath: string | undefined;
-    if (existsSync(paths.result)) {
-      try {
-        const parsed = parseResultMarkdown(readFileSync(paths.result, "utf8"));
-        meta = parsed.meta;
-        resultBody = parsed.body;
-        resultPath = paths.result;
-      } catch {
-        /* unreadable artifact is not evidence */
-      }
+    const resultTextRaw = await runtime.io.readText(paths.result);
+    if (resultTextRaw !== undefined) {
+      const parsed = parseResultMarkdown(resultTextRaw);
+      meta = parsed.meta;
+      resultBody = parsed.body;
+      resultPath = paths.result;
     }
 
     const finalRaw = sessionResult?.text?.trim() ?? "";
@@ -99,10 +100,10 @@ export class HarvestService {
 
     const diff =
       options.withDiff !== false && record.cwd && !record.external
-        ? await git.diff({
+        ? await runtime.git.diff({
             cwd: record.cwd,
             baseline: record.baseline,
-            patchPath: paths.diff,
+            patchPath: join(this.deps.paths.artifactsRoot, record.taskId, "diff.patch"),
             maxBytes: config.maxDiffBytes,
           })
         : undefined;

@@ -33,4 +33,6 @@ export const Config = z.object({
   allowCwd: z.array(z.string()).default([]),
   machines: z.array(z.string()).default([]),
   sharedFilesystem: z.array(z.string()).default([]),
+  machineTargets: z.array(z.string()).default([]),
+  remoteHomeDir: z.string().default(DEFAULT_CONFIG.remoteHomeDir),
 });

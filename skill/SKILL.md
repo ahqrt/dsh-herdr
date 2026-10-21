@@ -64,7 +64,7 @@ herdr_message_agent({
 ## 6. 远程机器
 
 - 只有 `machines` 里配置过的 label 才能用；传 `machine` 给 spawn/list/get_result/message。
-- 远程 **spawn** 还要求该机器在 `sharedFilesystem` 里（artifact 和 session 要本地可读）；没有共享挂载时，只做远程 `list` / 读取 / 发消息。
+- 远程 **spawn** 需要文件访问：`machineTargets: ["label=user@host"]`（SSH，需 key auth）或 `sharedFilesystem`（本地挂载）。SSH 桥会直接读写远端 artifact/session，不需要挂载。
 - 任务记录会记住 machine，后续 `get_result` / `close` 不用再传。
 
 ## 7. blocked

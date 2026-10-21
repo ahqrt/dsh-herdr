@@ -69,7 +69,7 @@ export class LifecycleService {
     }
 
     if (input.removeWorktree && record.worktree) {
-      await this.deps.worktree.remove(record.worktree, input.force === true);
+      await this.deps.worktree.remove(record.worktree, input.force === true, record.machine);
     }
 
     await transport.closePane(record.paneId, input.signal);

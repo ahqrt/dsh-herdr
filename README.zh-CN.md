@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.3.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.4.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
@@ -41,7 +41,7 @@ DSH 自带 subagent 跑在进程内，和主会话共用模型。有些场景你
 | **隔离** | `isolated: true` 在独立 git worktree 里跑，返回路径。 |
 | **Transcript** | `herdr_read_agent` 按 turn 翻 pi session，不只看最终答复。 |
 | **事件等待** | 可选 socket 传输，用 `agent.wait` 在服务端等；连接失败自动退回 CLI。 |
-| **远程机器** | spawn/list/result/message 支持 `machine`，走 `herdr --machine`；远程 spawn 需要共享文件系统，远程查看不需要。 |
+| **远程机器** | spawn/list/result/message 支持 `machine`，走 `herdr --machine`；SSH 文件桥（`machineTargets`）不再需要本地挂载。 |
 | **可诊断** | `herdr_doctor` 一次检查 binary、server、kinds、别名表、目录、拓扑、pi。 |
 
 ---
@@ -78,11 +78,11 @@ flowchart LR
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.3.1.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.4.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
-`dsh-herdr@0.3.1` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
+`dsh-herdr@0.4.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
 
 ### 装进 CLI profile
 

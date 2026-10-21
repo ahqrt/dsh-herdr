@@ -1,5 +1,6 @@
 import { type InboxMessage } from "../domain/inbox.js";
 import type { TaskStatus } from "../domain/types.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
 export interface InboxEntry extends InboxMessage {
     taskId: string;
@@ -24,6 +25,7 @@ export interface InboxReadResult {
 }
 export interface InboxDeps {
     store: TaskStore;
+    runtimes: MachineRuntimePool;
 }
 export declare class InboxService {
     private readonly deps;

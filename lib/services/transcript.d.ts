@@ -1,4 +1,5 @@
 import type { TranscriptMessage } from "../domain/transcript.js";
+import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
 export interface TranscriptReadInput {
     target: string;
@@ -17,7 +18,8 @@ export interface TranscriptReadResult {
 }
 export declare class TranscriptService {
     private readonly store;
-    constructor(store: TaskStore);
+    private readonly runtimes;
+    constructor(store: TaskStore, runtimes: MachineRuntimePool);
     read(input: TranscriptReadInput): Promise<TranscriptReadResult>;
     private resolve;
 }
