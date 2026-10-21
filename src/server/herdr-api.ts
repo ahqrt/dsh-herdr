@@ -11,6 +11,7 @@ import { extractSessionResultFromText } from "../domain/session.js";
 import { artifactPaths } from "../domain/prompt.js";
 import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
+import type { TransportPool } from "../ports/transports.js";
 import type { LifecycleService } from "../services/lifecycle.js";
 
 const MAX_TEXT = 300_000;
@@ -20,6 +21,7 @@ export interface HerdrApiDeps {
   store: TaskStore;
   lifecycle: LifecycleService;
   runtimes: MachineRuntimePool;
+  transports: TransportPool;
   paths: Paths;
 }
 
@@ -54,6 +56,40 @@ export function createHerdrApi(deps: HerdrApiDeps) {
         const machine = url.searchParams.get("machine") ?? undefined;
         const agents = await deps.lifecycle.list({ machine });
         json(res, 200, { ok: true, agents });
+        return;
+      }
+      if (path === "/herdr/api/live") {
+        const target = url.searchParams.get("target");
+        if (!target) {
+          json(res, 400, { ok: false, error: "target is required" });
+          return;
+        }
+        const machine = url.searchParams.get("machine") ?? undefined;
+        const transport = deps.transports.resolve(machine);
+        const agent = await transport.getAgent(target);
+        if (!agent) {
+          json(res, 404, {
+            ok: false,
+            error: "no live agent matches that handle",
+            code: "AGENT_NOT_FOUND",
+          });
+          return;
+        }
+        const text = await transport.readAgent(agent.name ?? target, {
+          lines: 100,
+          source: "recent-unwrapped",
+        });
+        json(res, 200, {
+          ok: true,
+          live: {
+            name: agent.name,
+            paneId: agent.paneId,
+            status: agent.status,
+            kind: agent.kind,
+            machine,
+            tail: cap(text),
+          },
+        });
         return;
       }
       if (path === "/herdr/api/task") {

@@ -163,11 +163,13 @@ A pi session file is append-only across turns. Harvest only accepts its last ass
 ## Web panel
 
 The host registers a same-origin `/herdr/api` prefix route (`health`, `fleet`,
-`task`) through `webServer` with dynamic inject, so profiles without a web server
+`task`, `live`) through `webServer` with dynamic inject, so profiles without a web server
 still load. `POST /herdr/api/action` additionally requires
 `x-herdr-panel: 1` and a JSON body, then calls `LifecycleService.interrupt` or
 `close`; ownership, pane-identity, and active-agent gates are the service's, not
-a second implementation. The browser half is a hand-written client module
+a second implementation. `live` reads a pane tail through
+`transport.readAgent` and never mutates; external agents are therefore
+read-only in the panel. The browser half is a hand-written client module
 (`lib/client.js`) that registers a `sidebarRightTabs` type plus the
 `sidebar.right.pane.tab` slot and renders the fleet, detail, and per-file diff.
 

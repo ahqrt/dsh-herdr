@@ -22,7 +22,8 @@ flowchart LR
 - **Panel actions are gated twice.** The browser route requires a same-origin
   POST, JSON content type, and `x-herdr-panel: 1`; the lifecycle service then
   refuses unowned tasks, changed panes, and active closes without `force`.
-  Reads return task text; treat the web origin as trusted.
+  Reads return task text and, through `live`, a pane tail for any agent the
+  local Herdr server knows. Treat the web origin as trusted.
 - **Remote machines are limited by config.** `machines` is an allowlist; file
   access comes from `machineTargets` (SSH) or `sharedFilesystem`. The SSH bridge
   runs with `BatchMode=yes`, never stores credentials, and quotes every path;

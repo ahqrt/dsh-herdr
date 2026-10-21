@@ -16,9 +16,9 @@
 The Electron app owns its profile; `dsh plugin --profile desktop …` is rejected by design.
 
 1. Build or fetch the package:
-   - tarball: `pnpm pack` → `dsh-herdr-0.7.0.tgz` (or the release asset)
+   - tarball: `pnpm pack` → `dsh-herdr-0.8.0.tgz` (or the release asset)
    - link: the absolute checkout path
-   - npm: `dsh-herdr@0.7.0` (published)
+   - npm: `dsh-herdr@0.8.0` (published)
 2. Open **Plugins** in the app sidebar → install.
 3. Verify `package.json` in `~/.dsh/profiles/desktop/` lists `dsh-herdr` under `dependencies` **and** `dsh.profile.bundles`.
 4. The patch row appears in the composed profile:

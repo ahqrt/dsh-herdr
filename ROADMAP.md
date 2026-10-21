@@ -45,12 +45,17 @@ has a place below, roughly in order of value.
 - **Diff navigation**: per-file sections, add/delete counts, raw toggle.
 - **Fleet filters**: owned/all and machine selector.
 
-## 0.8 — deeper evidence
+## 0.8 — deeper evidence (shipped in 0.8.0)
 
-- **Read-only external panes**: show pane output for agents this plugin did not
-  spawn, through `herdr_read_agent`.
-- **Diff syntax highlighting** and per-file copy.
+- **Read-only external panes**: pane tails for agents this plugin did not spawn.
+- **Diff hunk highlighting** and per-file/patch copy.
 - **Bulk selection** for interrupt/close with a single confirmation.
+
+## 0.9 — search and context
+
+- **Fleet search** by name, cwd, kind, and model.
+- **Copy the review packet** (summary + diff + result path) as Markdown.
+- **Open the task cwd** in the file sidebar.
 
 ## 0.5 — hosts and polish (native provider shipped in 0.5.0)
 

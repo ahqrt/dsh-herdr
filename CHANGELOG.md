@@ -6,6 +6,17 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-21
+
+### Added
+
+- **Read-only live tails**: selecting an agent this plugin did not spawn shows
+  its pane tail (`GET /herdr/api/live`), with no action controls.
+- **Bulk actions**: check owned tasks in the fleet and interrupt or close them
+  with one confirmation; partial failures are reported per task.
+- **Diff affordances**: hunk headers are highlighted, and the patch or a single
+  file can be copied from the panel.
+
 ## [0.7.0] - 2026-10-21
 
 ### Added

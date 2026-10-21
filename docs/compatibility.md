@@ -13,6 +13,12 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.8.0 additions
+
+Additive: read-only `GET /herdr/api/live`, bulk selection in the panel, and
+diff copy/hunk highlighting. External agents remain read-only; bulk actions only
+accept owned task ids.
+
 ## 0.7.0 additions
 
 Additive: panel actions (`POST /herdr/api/action`), fleet filters, and per-file

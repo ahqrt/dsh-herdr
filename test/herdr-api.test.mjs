@@ -92,6 +92,15 @@ function setup() {
         },
       }),
     },
+    transports: {
+      resolve: () => ({
+        getAgent: async (target) =>
+          target === "wV:p2"
+            ? { name: "wV:p2", paneId: "wV:p2", status: "idle", kind: "pi" }
+            : undefined,
+        readAgent: async () => "live tail line",
+      }),
+    },
     paths: { artifactsRoot: join(dir, "artifacts") },
   });
   return { dir, taskId, record, api, calls };
@@ -196,6 +205,23 @@ test("panel actions require the panel header and reuse ownership errors", async 
     );
     assert.equal(unowned.status, 403);
     assert.match(JSON.parse(unowned.body).error, /not owned/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("live pane tails are read-only and 404 unknown agents", async () => {
+  const { dir, api } = setup();
+  try {
+    const live = response();
+    await api(request("/herdr/api/live?target=wV:p2"), live);
+    assert.equal(live.status, 200);
+    assert.equal(JSON.parse(live.body).live.tail.text, "live tail line");
+    assert.equal(JSON.parse(live.body).live.name, "wV:p2");
+
+    const missing = response();
+    await api(request("/herdr/api/live?target=nope"), missing);
+    assert.equal(missing.status, 404);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
