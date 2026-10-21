@@ -94,7 +94,7 @@ Consequences:
 | `src/adapters/fs/memory-store.ts` | Test/embed store. |
 | `src/adapters/git/local.ts` | Baseline and bounded diff. |
 | `src/services/*` | Use cases (spawn, harvest, message, inbox, transcript, worktree, subagent-provider, …). No I/O beyond their ports. |
-| `src/server/herdr-api.ts` | Read-only `/herdr/api` endpoints for the web panel. |
+| `src/server/herdr-api.ts` | `/herdr/api` read endpoints plus guarded panel actions. |
 | `client/index.js` | Browser half: `Herdr` right-sidebar tab and guide entry. |
 | `src/tools/*` | Parameter schemas, cwd resolution, model-facing rendering. |
 
@@ -162,13 +162,14 @@ A pi session file is append-only across turns. Harvest only accepts its last ass
 
 ## Web panel
 
-The host registers a same-origin, read-only `/herdr/api` prefix route
-(`health`, `fleet`, `task`) through `webServer` with dynamic inject, so profiles
-without a web server still load. The browser half is a hand-written client
-module (`lib/client.js`) that registers a `sidebarRightTabs` type plus the
-`sidebar.right.pane.tab` slot and renders the fleet/diff view. It is read-only
-by design: mutations stay in the agent-facing tools, where the gates and audit
-log live.
+The host registers a same-origin `/herdr/api` prefix route (`health`, `fleet`,
+`task`) through `webServer` with dynamic inject, so profiles without a web server
+still load. `POST /herdr/api/action` additionally requires
+`x-herdr-panel: 1` and a JSON body, then calls `LifecycleService.interrupt` or
+`close`; ownership, pane-identity, and active-agent gates are the service's, not
+a second implementation. The browser half is a hand-written client module
+(`lib/client.js`) that registers a `sidebarRightTabs` type plus the
+`sidebar.right.pane.tab` slot and renders the fleet, detail, and per-file diff.
 
 ## Native subagent provider
 

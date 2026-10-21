@@ -101,7 +101,7 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
   const inbox = new InboxService({ store, runtimes });
   const transcript = new TranscriptService(store, runtimes);
   const lifecycle = new LifecycleService({ transports, store, audit, worktree });
-  const herdrApi = createHerdrApi({ store, lifecycle, runtimes, transports, paths });
+  const herdrApi = createHerdrApi({ store, lifecycle, runtimes, paths });
   const registerApi = (subContext: {
     webServer: { register(options: unknown): unknown };
     effect?: (fn: () => unknown, label: string) => void;

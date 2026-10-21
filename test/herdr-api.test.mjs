@@ -3,10 +3,22 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Readable } from "node:stream";
 import { createHerdrApi } from "../lib/server/herdr-api.js";
+import { HerdrError } from "../lib/domain/errors.js";
 
 function request(url, headers = {}) {
   return { url, method: "GET", headers };
+}
+
+function postRequest(url, body, headers = {}) {
+  return {
+    url,
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    [Symbol.asyncIterator]: () =>
+      Readable.from([Buffer.from(JSON.stringify(body))])[Symbol.asyncIterator](),
+  };
 }
 
 function response() {
@@ -29,6 +41,7 @@ function setup() {
   const dir = mkdtempSync(join(tmpdir(), "herdr-api-"));
   const taskId = "t1";
   const artifactDir = join(dir, "tasks", taskId);
+  const calls = [];
   const record = {
     schemaVersion: 1,
     taskId,
@@ -58,6 +71,15 @@ function setup() {
     },
     lifecycle: {
       list: async () => [{ owned: true, taskId, name: "worker-a", status: "completed" }],
+      interrupt: async (target) => {
+        if (target === "nope") throw new HerdrError("TASK_NOT_OWNED", "not owned");
+        calls.push({ action: "interrupt", target });
+        return { interrupted: true, message: "sent Escape" };
+      },
+      close: async (input) => {
+        calls.push({ action: "close", ...input });
+        return { closed: true, message: "closed" };
+      },
     },
     runtimes: {
       resolve: async () => ({
@@ -70,10 +92,9 @@ function setup() {
         },
       }),
     },
-    transports: {},
     paths: { artifactsRoot: join(dir, "artifacts") },
   });
-  return { dir, taskId, record, api };
+  return { dir, taskId, record, api, calls };
 }
 
 test("health and fleet answer with JSON envelopes", async () => {
@@ -125,6 +146,56 @@ test("unknown tasks are 404 and cross-origin reads are 403", async () => {
       cross,
     );
     assert.equal(cross.status, 403);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("panel actions require the panel header and reuse ownership errors", async () => {
+  const { dir, taskId, api, calls } = setup();
+  try {
+    const missing = response();
+    await api(postRequest("/herdr/api/action", { action: "interrupt", target: taskId }), missing);
+    assert.equal(missing.status, 403);
+
+    const interrupt = response();
+    await api(
+      postRequest(
+        "/herdr/api/action",
+        { action: "interrupt", target: taskId },
+        { "x-herdr-panel": "1" },
+      ),
+      interrupt,
+    );
+    assert.equal(interrupt.status, 200);
+    assert.deepEqual(JSON.parse(interrupt.body).result, {
+      interrupted: true,
+      message: "sent Escape",
+    });
+
+    const close = response();
+    await api(
+      postRequest(
+        "/herdr/api/action",
+        { action: "close", target: taskId, force: true },
+        { "x-herdr-panel": "1" },
+      ),
+      close,
+    );
+    assert.equal(close.status, 200);
+    assert.equal(calls.at(-1).force, true);
+
+    const unowned = response();
+    await api(
+      postRequest(
+        "/herdr/api/action",
+        { action: "interrupt", target: "nope" },
+        { "x-herdr-panel": "1" },
+      ),
+      unowned,
+    );
+    assert.equal(unowned.status, 403);
+    assert.match(JSON.parse(unowned.body).error, /not owned/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

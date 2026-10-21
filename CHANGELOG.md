@@ -6,6 +6,19 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-21
+
+### Added
+
+- **Panel actions**: interrupt and close owned tasks from the fleet detail,
+  with the same ownership gates as the tools; close asks for confirmation and
+  force-closes the pane while retaining the session file.
+- **Fleet filters**: owned/all toggle and a machine selector.
+- **Diff navigation**: per-file sections with add/delete counts, collapsible
+  bodies, and a raw/structured toggle.
+- `POST /herdr/api/action` (JSON + `x-herdr-panel: 1`, same-origin) returning
+  the lifecycle error code on refusal.
+
 ## [0.6.0] - 2026-10-21
 
 ### Added

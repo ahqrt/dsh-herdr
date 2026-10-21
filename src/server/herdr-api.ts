@@ -1,26 +1,25 @@
-// Read-only HTTP API for the web panel. Same-origin only; the DSH server's
-// authentication is the outer gate, and this handler adds an Origin check so a
-// cross-site page cannot read task data through the user's browser.
+// HTTP API for the web panel. Reads are open to same-origin callers; actions
+// require a JSON POST with the panel header, and reuse the lifecycle service's
+// ownership gates instead of re-implementing them.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { joinFor, type Paths } from "../domain/paths.js";
+import { HerdrError } from "../domain/errors.js";
+import { type Paths } from "../domain/paths.js";
 import { extractSessionResultFromText } from "../domain/session.js";
 import { artifactPaths } from "../domain/prompt.js";
-import type { TaskRecord } from "../domain/types.js";
 import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
-import type { TransportPool } from "../ports/transports.js";
 import type { LifecycleService } from "../services/lifecycle.js";
 
 const MAX_TEXT = 300_000;
+const MAX_BODY = 32 * 1024;
 
 export interface HerdrApiDeps {
   store: TaskStore;
   lifecycle: LifecycleService;
   runtimes: MachineRuntimePool;
-  transports: TransportPool;
   paths: Paths;
 }
 
@@ -30,13 +29,22 @@ export function createHerdrApi(deps: HerdrApiDeps) {
       json(res, 403, { ok: false, error: "forbidden" });
       return;
     }
+    const url = new URL(req.url ?? "/", "http://dsh.internal");
+    const path = url.pathname;
+
+    if (req.method === "POST") {
+      if (path !== "/herdr/api/action") {
+        json(res, 404, { ok: false, error: "unknown endpoint" });
+        return;
+      }
+      await action(deps, req, res);
+      return;
+    }
     if (req.method !== "GET" && req.method !== "HEAD") {
       json(res, 405, { ok: false, error: "method not allowed" });
       return;
     }
 
-    const url = new URL(req.url ?? "/", "http://dsh.internal");
-    const path = url.pathname;
     try {
       if (path === "/herdr/api/health") {
         json(res, 200, { ok: true, service: "dsh-herdr", version: 1 });
@@ -64,12 +72,92 @@ export function createHerdrApi(deps: HerdrApiDeps) {
       }
       json(res, 404, { ok: false, error: "unknown endpoint" });
     } catch (error) {
-      json(res, 500, {
-        ok: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      sendError(res, error);
     }
   };
+}
+
+async function action(
+  deps: HerdrApiDeps,
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  if (req.headers["x-herdr-panel"] !== "1") {
+    json(res, 403, { ok: false, error: "missing panel header" });
+    return;
+  }
+  if (!String(req.headers["content-type"] ?? "").startsWith("application/json")) {
+    json(res, 415, { ok: false, error: "content-type must be application/json" });
+    return;
+  }
+
+  try {
+    const body = await readJson(req);
+    const target = typeof body.target === "string" ? body.target.trim() : "";
+    if (!target || target.length > 200) {
+      json(res, 400, { ok: false, error: "target is required" });
+      return;
+    }
+    if (body.action === "interrupt") {
+      const result = await deps.lifecycle.interrupt(target);
+      json(res, 200, { ok: true, result });
+      return;
+    }
+    if (body.action === "close") {
+      const result = await deps.lifecycle.close({
+        target,
+        force: body.force === true,
+        removeWorktree: body.removeWorktree === true,
+      });
+      json(res, 200, { ok: true, result });
+      return;
+    }
+    json(res, 400, { ok: false, error: 'action must be "interrupt" or "close"' });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buffer.length;
+    if (size > MAX_BODY) throw new HerdrError("VALIDATION_ERROR", "request body is too large");
+    chunks.push(buffer);
+  }
+  const text = Buffer.concat(chunks).toString("utf8");
+  if (!text) return {};
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new HerdrError("VALIDATION_ERROR", "body must be a JSON object");
+    }
+    return parsed as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof HerdrError) throw error;
+    throw new HerdrError("VALIDATION_ERROR", "body is not valid JSON");
+  }
+}
+
+function sendError(res: ServerResponse, error: unknown): void {
+  const code = error instanceof HerdrError ? error.code : "INTERNAL";
+  const status =
+    code === "TASK_NOT_OWNED"
+      ? 403
+      : code === "TASK_NOT_FOUND"
+        ? 404
+        : code === "VALIDATION_ERROR"
+          ? 409
+          : code === "TIMEOUT"
+            ? 504
+            : 500;
+  json(res, status, {
+    ok: false,
+    error: error instanceof Error ? error.message : String(error),
+    code,
+  });
 }
 
 async function taskDetail(deps: HerdrApiDeps, target: string) {

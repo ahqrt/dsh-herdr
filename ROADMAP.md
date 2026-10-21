@@ -38,12 +38,19 @@ has a place below, roughly in order of value.
 - **Doctor file-access mode**: `ssh`, `mounted`, or missing.
 - **Mount remains a fallback** via `sharedFilesystem`.
 
-## 0.6 — panel actions
+## 0.7 — panel operations (shipped in 0.7.0)
 
-- **Panel actions**: interrupt and close from the fleet view, with the same
-  ownership gates as the tools.
-- **Diff navigation**: per-file folding and a raw/rendered toggle.
-- **Fleet filters**: owned/all and machine filter controls.
+- **Panel actions**: interrupt and close owned tasks, reusing the lifecycle
+  ownership gates.
+- **Diff navigation**: per-file sections, add/delete counts, raw toggle.
+- **Fleet filters**: owned/all and machine selector.
+
+## 0.8 — deeper evidence
+
+- **Read-only external panes**: show pane output for agents this plugin did not
+  spawn, through `herdr_read_agent`.
+- **Diff syntax highlighting** and per-file copy.
+- **Bulk selection** for interrupt/close with a single confirmation.
 
 ## 0.5 — hosts and polish (native provider shipped in 0.5.0)
 

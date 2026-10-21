@@ -13,6 +13,12 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.7.0 additions
+
+Additive: panel actions (`POST /herdr/api/action`), fleet filters, and per-file
+diff navigation. Actions only touch tasks this plugin spawned; the route is
+same-origin and requires the panel header.
+
 ## 0.6.0 additions
 
 Additive: the `Herdr` right-sidebar panel and `/herdr/api` read-only endpoints.
