@@ -6,6 +6,24 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-21
+
+### Added
+
+- Opt-in **socket transport** (`transport: auto | cli | socket`): one connection
+  per request over Herdr's Unix socket, with a CLI fallback when the socket
+  cannot be reached. `agent.wait` is now server-side instead of polled.
+- **Remote machines**: `machine` on spawn/list/result/message, `machines` and
+  `sharedFilesystem` config, `--machine` forwarding, per-machine registry
+  namespaces, and doctor checks. Remote spawn requires the remote filesystem to
+  be mounted locally; remote observation and messaging work without it.
+
+### Changed
+
+- `herdr_get_agent_result(wait:true)` and `waitForSettle` use the server-side
+  `agent wait` / socket `agent.wait` instead of a 700ms poll.
+- Doctor reports configured machines and their reachability.
+
 ## [0.2.0] - 2026-10-20
 
 ### Added

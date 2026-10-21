@@ -14,6 +14,10 @@ export function createListTool({ defineTool, deps }: ToolFactoryOptions) {
         type: "boolean",
         description: "Only agents this plugin spawned (default false).",
       },
+      machine: {
+        type: "string",
+        description: "Herdr --machine label (default: the local machine).",
+      },
     },
     output: {
       schema: {
@@ -32,6 +36,7 @@ export function createListTool({ defineTool, deps }: ToolFactoryOptions) {
     execute: wrapExecute(async (args: Record<string, unknown>, exec) => {
       const agents = await deps.lifecycle.list({
         ownedOnly: args.owned_only === true,
+        machine: typeof args.machine === "string" ? args.machine : undefined,
         signal: exec.signal,
       });
       return { agents };

@@ -2,6 +2,8 @@ export type Topology = "auto" | "workspace" | "split";
 export interface PluginConfig {
     enabled: boolean;
     herdrBin: string;
+    transport: "auto" | "cli" | "socket";
+    socketPath: string;
     defaultKind: string;
     defaultModel: string;
     aliasesFile: string;
@@ -21,6 +23,10 @@ export interface PluginConfig {
     stateFile: string;
     auditFile: string;
     allowCwd: string[];
+    /** Enabled Herdr `--machine` profiles this plugin may target. */
+    machines: string[];
+    /** Machine labels whose filesystem is mounted locally (spawn requires this). */
+    sharedFilesystem: string[];
 }
 export declare const DEFAULT_CONFIG: PluginConfig;
 /** Merge loader input over defaults and coerce the knobs that have ranges. */

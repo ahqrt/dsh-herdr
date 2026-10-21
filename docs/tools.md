@@ -36,6 +36,7 @@ Starts a pane, starts an agent, submits a task envelope, waits for a settled sta
 | `agent_args` | string[] | — | Raw flags after `--`, for kinds without first-class support. |
 | `client_task_id` | string | — | Idempotency key; a repeat returns the existing task. |
 | `isolated` | boolean | `false` | Run in a fresh git worktree (`dsh/<taskId>`); the path is returned. |
+| `machine` | string | local | Herdr `--machine` label enabled in `machines`; requires `sharedFilesystem` for spawn. |
 
 **Behavior**
 
@@ -60,6 +61,7 @@ Starts a pane, starts an agent, submits a task envelope, waits for a settled sta
 | `wait` | boolean | `true` when the task is running | Blocks until idle/done/blocked. |
 | `timeout_ms` | number | `600000` | Wait budget. |
 | `lines` | number | `80` | Pane tail fallback. |
+| `machine` | string | — | Target an external agent on a configured machine. Owned tasks remember their machine. |
 
 For a target the plugin did not spawn, it returns an **observation** (`status=idle`, `nextAction=none`) with the last assistant message as context. It never re-submits the task.
 
@@ -71,6 +73,7 @@ For a target the plugin did not spawn, it returns an **observation** (`status=id
 |---|---|---|---|
 | `target` | string, **required** | — | Name, pane, or task id. |
 | `message` | string, **required** | — | The text. |
+| `machine` | string | — | Target an external agent on a configured machine. |
 | `kind` | `NOTE` \| `REVIEW_FINDINGS` \| `ACCEPT` \| `REJECT` \| `ANSWER` | — | Protocol header. |
 | `round` | number | `1` | Used by `REVIEW_FINDINGS`. |
 | `wait` | boolean | `false` | Wait for the target's turn to settle. |
@@ -87,6 +90,7 @@ The message is wrapped in `<agent-message from="dsh:orchestrator" to="…">`. Wh
 | Parameter | Type | Default |
 |---|---|---|
 | `owned_only` | boolean | `false` |
+| `machine` | string | local | List one configured machine instead of the local one. |
 
 Returns `{ agents: FleetRow[] }`. `owned` marks a task in this plugin's registry. Foreign agents are included read-only.
 
@@ -139,6 +143,20 @@ Only `kind=pi` exposes a session transcript. The result includes `total` and `ne
 No parameters. Returns `{ ok, checks[], next[], aliases[], runtime }`. Each check is `ok | warn | fail` with a human detail and, when known, a fix in `next`.
 
 ---
+
+## Transports and machines
+
+The CLI is the default and only transport for remote machines. With
+`transport: auto`, the local machine first tries the socket (`agent.wait`,
+`agent.list`, …) and degrades to the CLI if a connection cannot be made; a
+mutation is never retried after an I/O failure. `transport: socket` disables the
+fallback.
+
+`machine` is accepted on `spawn`, `get_result` (external targets), `message`, and
+`list`. A spawned task stores its machine; later `get_result`/`close`/`interrupt`
+resolve it automatically. Remote **spawn** requires the machine to be listed in
+`sharedFilesystem`, because artifacts and the pi session are read with local
+file I/O. Remote `list`/`read`/`message` work without a mount.
 
 ## Protocol headers
 

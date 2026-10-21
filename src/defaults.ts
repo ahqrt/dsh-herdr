@@ -5,6 +5,8 @@ export type Topology = "auto" | "workspace" | "split";
 export interface PluginConfig {
   enabled: boolean;
   herdrBin: string;
+  transport: "auto" | "cli" | "socket";
+  socketPath: string;
   defaultKind: string;
   defaultModel: string;
   aliasesFile: string;
@@ -24,11 +26,17 @@ export interface PluginConfig {
   stateFile: string;
   auditFile: string;
   allowCwd: string[];
+  /** Enabled Herdr `--machine` profiles this plugin may target. */
+  machines: string[];
+  /** Machine labels whose filesystem is mounted locally (spawn requires this). */
+  sharedFilesystem: string[];
 }
 
 export const DEFAULT_CONFIG: PluginConfig = {
   enabled: true,
   herdrBin: "herdr",
+  transport: "cli",
+  socketPath: "~/.config/herdr/herdr.sock",
   defaultKind: "pi",
   defaultModel: "flash",
   aliasesFile: "~/.pi/agent/model-aliases.md",
@@ -48,6 +56,8 @@ export const DEFAULT_CONFIG: PluginConfig = {
   stateFile: "state.json",
   auditFile: "audit.ndjson",
   allowCwd: [],
+  machines: [],
+  sharedFilesystem: [],
 };
 
 /** Merge loader input over defaults and coerce the knobs that have ranges. */
@@ -73,6 +83,7 @@ export function resolveConfig(raw: unknown): PluginConfig {
     }
   }
 
+  if (!["auto", "cli", "socket"].includes(merged.transport)) merged.transport = "auto";
   if (!["auto", "workspace", "split"].includes(merged.topology)) merged.topology = "auto";
   if (!["right", "down"].includes(merged.splitDirection)) merged.splitDirection = "right";
 

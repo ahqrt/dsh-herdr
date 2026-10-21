@@ -91,6 +91,7 @@ export class HerdrCli {
   constructor(
     private readonly bin: string,
     private readonly env: NodeJS.ProcessEnv = process.env,
+    private readonly machine?: string,
   ) {}
 
   /** Cached `herdr --version`; `refresh` re-runs it (doctor, session start). */
@@ -125,7 +126,11 @@ export class HerdrCli {
     return this.exec<T>(args, { timeoutMs: defaultTimeoutFor(args), ...options });
   }
 
-  private run<T>(args: string[], options: CliOptions): Promise<Result<T>> {
+  private run<T>(inputArgs: string[], options: CliOptions): Promise<Result<T>> {
+    const args =
+      this.machine && inputArgs[0] !== "--version"
+        ? ["--machine", this.machine, ...inputArgs]
+        : inputArgs;
     const timeoutMs = options.timeoutMs ?? 60_000;
     return new Promise<Result<T>>((resolve) => {
       let child;

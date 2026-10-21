@@ -29,7 +29,7 @@ import type {
 import { artifactPaths } from "../domain/prompt.js";
 import type { PluginConfig } from "../defaults.js";
 import type { GitService } from "../ports/store.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 
 export interface HarvestOptions {
   signal?: AbortSignal;
@@ -38,7 +38,7 @@ export interface HarvestOptions {
 }
 
 export interface HarvestDeps {
-  transport: HerdrTransport;
+  transports: TransportPool;
   git: GitService;
   config: PluginConfig;
 }
@@ -47,7 +47,8 @@ export class HarvestService {
   constructor(private readonly deps: HarvestDeps) {}
 
   async harvest(record: TaskRecord, options: HarvestOptions = {}): Promise<AgentResult> {
-    const { transport, git, config } = this.deps;
+    const { git, config } = this.deps;
+    const transport = this.deps.transports.resolve(record.machine);
     const target = record.name || record.paneId || record.taskId;
     const paths = artifactPaths(record.artifactDir);
 
@@ -108,9 +109,14 @@ export class HarvestService {
 
     let transcriptTail: string | undefined;
     if (!finalRaw && !resultBody) {
-      transcriptTail = await this.readTail(target, options.tailLines ?? 80, options.signal);
+      transcriptTail = await this.readTail(
+        transport,
+        target,
+        options.tailLines ?? 80,
+        options.signal,
+      );
     } else if (status === "blocked") {
-      transcriptTail = await this.readTail(target, 60, options.signal);
+      transcriptTail = await this.readTail(transport, target, 60, options.signal);
     }
 
     const maxChars = config.maxResultChars;
@@ -140,6 +146,7 @@ export class HarvestService {
         kind: record.kind,
         model: record.model,
         thinking: record.thinking,
+        machine: record.machine,
       },
       herdrStatus,
       sessionPath,
@@ -171,13 +178,14 @@ export class HarvestService {
     };
   }
 
-  private async readTail(target: string, lines: number, signal?: AbortSignal): Promise<string> {
+  private async readTail(
+    transport: import("../ports/transport.js").HerdrTransport,
+    target: string,
+    lines: number,
+    signal?: AbortSignal,
+  ): Promise<string> {
     try {
-      return await this.deps.transport.readAgent(
-        target,
-        { lines, source: "recent-unwrapped" },
-        signal,
-      );
+      return await transport.readAgent(target, { lines, source: "recent-unwrapped" }, signal);
     } catch {
       return "";
     }

@@ -1,4 +1,4 @@
-import type { AgentInfo, PaneTarget } from "../../domain/types.js";
+import type { AgentInfo, HerdrAgentStatus, PaneTarget } from "../../domain/types.js";
 import type { CreatedTab, CreatedWorkspace, HerdrTransport, PromptOptions, PromptOutcome, StartAgentSpec, WorkspaceRef } from "../../ports/transport.js";
 import { HerdrCli } from "./cli.js";
 /** Normalize the live snake_case agent object. */
@@ -15,6 +15,10 @@ export declare class HerdrCliTransport implements HerdrTransport {
         lines?: number;
         source?: string;
     }, signal?: AbortSignal): Promise<string>;
+    waitForAgent(target: string, options: {
+        until: HerdrAgentStatus[];
+        timeoutMs: number;
+    }, signal?: AbortSignal): Promise<void>;
     startAgent(spec: StartAgentSpec, signal?: AbortSignal): Promise<{
         paneId: string;
     }>;

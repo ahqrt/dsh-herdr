@@ -1,9 +1,9 @@
 import type { PaneTarget } from "../domain/types.js";
 import type { PluginConfig } from "../defaults.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 import type { TaskStore } from "../ports/store.js";
 export interface TopologyDeps {
-    transport: HerdrTransport;
+    transports: TransportPool;
     store: TaskStore;
     config: PluginConfig;
     env: NodeJS.ProcessEnv;
@@ -14,6 +14,7 @@ export declare class TopologyService {
     ensurePane(input: {
         cwd: string;
         name: string;
+        machine?: string;
         signal?: AbortSignal;
     }): Promise<PaneTarget>;
     private ensureWorkspacePane;

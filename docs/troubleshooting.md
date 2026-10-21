@@ -23,6 +23,7 @@ Start with `herdr_doctor`. Its `FAIL` lines name the fix. Everything below assum
 | `TIMEOUT` | CLI call or wait budget expired | A timed-out delegation is still alive; call `herdr_get_agent_result(wait:true)`. |
 | `ABORTED` | The tool call was cancelled | The plugin sends Escape to an owned agent; check its status. |
 | `STORE_UNAVAILABLE` | State lock/permission problem | Check `~/.dsh/herdr` ownership; remove a stale `.lock` if no DSH is running. |
+| `HERDR_UNAVAILABLE` with `phase: connect` | `transport: socket` could not reach the local socket | Open Herdr once, or use `transport: auto`/`cli`. With `auto` the plugin degrades silently. |
 
 ## Symptom: tools are not listed
 
@@ -61,6 +62,22 @@ Use the exact `provider/model` from the output, or add a row to `~/.pi/agent/mod
 ## Symptom: agy refuses model
 
 `kind=agy` rejects `model` and `thinking` (its CLI does). Omit them; pass agy's own flags through `agent_args`.
+
+## Symptom: socket transport behaves differently from the CLI
+
+`transport: auto` degrades to CLI only on a **connect** failure. An I/O failure
+mid-request surfaces as `HERDR_UNAVAILABLE` instead of retrying, because retrying
+a mutation could apply it twice. Switch to `transport: cli` to confirm whether
+the socket is the problem, and run `herdr status` for protocol drift.
+
+## Symptom: a remote machine is refused
+
+- `machine "x" is not enabled` → add the label to `machines`.
+- `not declared as sharing a filesystem` → remote spawn needs a mounted
+  filesystem for artifacts and the pi session; add it to `sharedFilesystem`, or
+  use remote `list`/`read`/`message` only.
+- `herdr --machine <label> status` should answer; doctor checks each configured
+  machine.
 
 ## Symptom: worktree creation fails
 

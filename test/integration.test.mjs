@@ -32,6 +32,7 @@ import { DoctorService } from "../lib/services/doctor.js";
 import { InboxService } from "../lib/services/inbox.js";
 import { TranscriptService } from "../lib/services/transcript.js";
 import { WorktreeService } from "../lib/services/worktree.js";
+import { MachineTransportPool } from "../lib/adapters/transport-pool.js";
 import { HerdrError } from "../lib/domain/errors.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -77,11 +78,16 @@ function setup() {
   const store = new FileTaskStore(paths.stateFile, systemClock);
   const audit = new FileAuditLog(paths.auditFile);
   const gitService = new LocalGit();
-  const topology = new TopologyService({ transport, store, config, env: {} });
-  const worktree = new WorktreeService({ git: gitService, config, paths });
-  const harvest = new HarvestService({ transport, git: gitService, config });
-  const spawn = new SpawnService({
+  const transports = new MachineTransportPool(
     transport,
+    config,
+    (machine) => new HerdrCliTransport(new HerdrCli(fake, env, machine)),
+  );
+  const topology = new TopologyService({ transports, store, config, env: {} });
+  const worktree = new WorktreeService({ git: gitService, config, paths });
+  const harvest = new HarvestService({ transports, git: gitService, config });
+  const spawn = new SpawnService({
+    transports,
     store,
     git: gitService,
     topology,
@@ -93,9 +99,9 @@ function setup() {
     clock: systemClock,
     ids: systemIds,
   });
-  const message = new MessageService({ transport, store, audit });
-  const lifecycle = new LifecycleService({ transport, store, audit, worktree });
-  const doctor = new DoctorService({ transport, config, paths, env: {} });
+  const message = new MessageService({ transports, store, audit });
+  const lifecycle = new LifecycleService({ transports, store, audit, worktree });
+  const doctor = new DoctorService({ transports, config, paths, env: {} });
   const inbox = new InboxService({ store });
   const transcript = new TranscriptService(store);
 
@@ -375,6 +381,43 @@ test("isolated spawn runs in a fresh worktree and close can remove it", {
 
     await ctx.lifecycle.close({ target: result.taskId, removeWorktree: true });
     assert.equal(existsSync(result.worktree.path), false);
+  } finally {
+    cleanup(ctx.root);
+  }
+});
+
+test("a spawn on a configured shared-filesystem machine records the machine", {
+  skip: windows && "fake herdr needs a POSIX shebang",
+}, async () => {
+  const ctx = setup();
+  try {
+    ctx.config.machines = ["m1", "m2"];
+    ctx.config.sharedFilesystem = ["m1"];
+    const result = await ctx.spawn.spawn({
+      prompt: "remote but shared",
+      cwd: ctx.repo,
+      kind: "pi",
+      model: "flash",
+      machine: "m1",
+    });
+    assert.equal(result.agent.machine, "m1");
+    assert.equal((await ctx.store.find(result.taskId)).machine, "m1");
+
+    await assert.rejects(
+      ctx.spawn.spawn({
+        prompt: "remote and not shared",
+        cwd: ctx.repo,
+        kind: "pi",
+        machine: "m2",
+      }),
+      (error) =>
+        error instanceof HerdrError && /not declared as sharing a filesystem/.test(error.message),
+    );
+
+    await assert.rejects(
+      ctx.spawn.spawn({ prompt: "unknown", cwd: ctx.repo, kind: "pi", machine: "nope" }),
+      (error) => error instanceof HerdrError && /not enabled/.test(error.message),
+    );
   } finally {
     cleanup(ctx.root);
   }

@@ -20,8 +20,9 @@ export declare function parseLastJson(text: string): unknown;
 export declare class HerdrCli {
     private readonly bin;
     private readonly env;
+    private readonly machine?;
     private probeCache;
-    constructor(bin: string, env?: NodeJS.ProcessEnv);
+    constructor(bin: string, env?: NodeJS.ProcessEnv, machine?: string | undefined);
     /** Cached `herdr --version`; `refresh` re-runs it (doctor, session start). */
     probe(refresh?: boolean): Promise<HerdrProbe>;
     /** Gated exec: refuses below the floor, then runs. */

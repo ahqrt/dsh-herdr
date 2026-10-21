@@ -14,26 +14,24 @@ export async function waitForSettle(
   timeoutMs: number,
   signal?: AbortSignal,
 ): Promise<SettleState> {
-  const deadline = Date.now() + Math.max(5_000, timeoutMs);
-  let last: HerdrAgentStatus | undefined;
-
-  while (Date.now() < deadline) {
-    if (signal?.aborted) {
-      throw new HerdrError("ABORTED", "the wait was cancelled");
+  const budget = Math.max(5_000, timeoutMs);
+  try {
+    await transport.waitForAgent(
+      target,
+      { until: ["idle", "done", "blocked"], timeoutMs: budget },
+      signal,
+    );
+  } catch (error) {
+    if (error instanceof HerdrError) {
+      if (error.code === "ABORTED") throw error;
+      if (error.code === "AGENT_NOT_FOUND" || error.code === "PANE_GONE") return "gone";
+      if (error.code !== "TIMEOUT") throw error;
+    } else {
+      throw error;
     }
-    const agent = await transport.getAgent(target, signal);
-    if (!agent) return "gone";
-    if (agent.status) last = agent.status;
-    if (agent.status === "idle" || agent.status === "done" || agent.status === "blocked") {
-      return agent.status;
-    }
-    await sleep(700);
   }
-  return last ?? "unknown";
-}
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolveSleep) => {
-    setTimeout(resolveSleep, ms);
-  });
+  const agent = await transport.getAgent(target, signal);
+  if (!agent) return "gone";
+  return agent.status ?? "unknown";
 }

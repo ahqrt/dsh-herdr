@@ -17,12 +17,15 @@ has a place below, roughly in order of value.
   settles. Blocked on a stable host injection API; the inbox long-poll is the
   current answer.
 
-## 0.3 — transports and hosts
+## 0.3 — transports and hosts (shipped in 0.3.0)
 
-- **Socket/event transport**: subscribe to Herdr state events instead of polling;
-  implement `HerdrTransport` again and select it in `index.ts`.
-- **Remote Herdr** (`herdr --machine`): per-machine registry namespaces and
-  absolute-path rules.
+- **Socket/event transport**: a one-request-per-connection socket adapter with
+  server-side `agent.wait`; opt-in via `transport`, CLI fallback on connect.
+- **Remote Herdr** (`herdr --machine`): per-machine transports and registry
+  namespaces, `machines` allowlist, doctor checks. Spawn requires a locally
+  mounted filesystem; observation and messaging do not.
+- **Remote file bridge**: fetch session/result files over SSH so remote spawn no
+  longer needs a mount.
 - **Native subagent provider**: wrap the services in DSH's `ctx.subagents`
   provider so delegations show as first-class subagent cards.
 - **Client UI panel**: a fleet view and per-task diff viewer, consuming the same

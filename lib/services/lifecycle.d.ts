@@ -1,9 +1,9 @@
 import type { TaskRecord } from "../domain/types.js";
 import type { AuditLog, TaskStore } from "../ports/store.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 import type { WorktreeService } from "./worktree.js";
 export interface LifecycleDeps {
-    transport: HerdrTransport;
+    transports: TransportPool;
     store: TaskStore;
     audit: AuditLog;
     worktree: WorktreeService;
@@ -30,6 +30,7 @@ export declare class LifecycleService {
     /** Owned records joined with the live Herdr fleet. */
     list(options?: {
         ownedOnly?: boolean;
+        machine?: string;
         signal?: AbortSignal;
     }): Promise<FleetRow[]>;
 }
@@ -45,6 +46,7 @@ export interface FleetRow {
     paneId?: string;
     tabId?: string;
     role?: TaskRecord["role"];
+    machine?: string;
     ageMs?: number;
 }
 //# sourceMappingURL=lifecycle.d.ts.map

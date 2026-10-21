@@ -74,6 +74,8 @@ export interface TaskRecord {
     inboxOffset?: number;
     /** Created when the spawn asked for isolated:true. */
     worktree?: WorktreeInfo;
+    /** The Herdr `--machine` profile this task runs on; absent = local. */
+    machine?: string;
     /** A pane we did not spawn (read-only observation). */
     external?: boolean;
     error?: string;
@@ -107,6 +109,7 @@ export interface AgentResult {
         kind: string;
         model?: string;
         thinking?: string;
+        machine?: string;
     };
     herdrStatus?: HerdrAgentStatus;
     /** pi session JSONL, when the kind exposes one. */
@@ -157,6 +160,7 @@ export interface SpawnInput {
     agentArgs?: string[];
     clientTaskId?: string;
     isolated?: boolean;
+    machine?: string;
     sessionId?: string;
     signal?: AbortSignal;
 }

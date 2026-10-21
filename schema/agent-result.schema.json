@@ -67,6 +67,9 @@
         },
         "thinking": {
           "type": "string"
+        },
+        "machine": {
+          "type": "string"
         }
       }
     },

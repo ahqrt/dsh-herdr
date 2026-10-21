@@ -1,7 +1,7 @@
 import { type AliasSummary } from "../domain/aliases.js";
 import { type Paths } from "../domain/paths.js";
 import type { PluginConfig } from "../defaults.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 export type CheckStatus = "ok" | "warn" | "fail";
 export interface DoctorCheck {
     status: CheckStatus;
@@ -18,10 +18,12 @@ export interface DoctorReport {
         platform: string;
         topology: string;
         inHerdrPane: boolean;
+        machines: string[];
+        transport: string;
     };
 }
 export interface DoctorDeps {
-    transport: HerdrTransport;
+    transports: TransportPool;
     config: PluginConfig;
     paths: Paths;
     env: NodeJS.ProcessEnv;

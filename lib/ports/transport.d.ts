@@ -43,6 +43,11 @@ export interface HerdrTransport {
         lines?: number;
         source?: string;
     }, signal?: AbortSignal): Promise<string>;
+    /** Server-side wait for one of `until`; resolves on match or timeout. */
+    waitForAgent(target: string, options: {
+        until: HerdrAgentStatus[];
+        timeoutMs: number;
+    }, signal?: AbortSignal): Promise<void>;
     startAgent(spec: StartAgentSpec, signal?: AbortSignal): Promise<{
         paneId: string;
     }>;

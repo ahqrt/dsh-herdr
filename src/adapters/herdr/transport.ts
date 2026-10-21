@@ -134,6 +134,23 @@ export class HerdrCliTransport implements HerdrTransport {
     return typeof result.data === "string" ? result.data : "";
   }
 
+  async waitForAgent(
+    target: string,
+    options: { until: HerdrAgentStatus[]; timeoutMs: number },
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const args = ["agent", "wait", target];
+    for (const state of options.until) args.push("--until", state);
+    args.push("--timeout", String(options.timeoutMs));
+    const result = await this.cli.exec(args, {
+      timeoutMs: options.timeoutMs + 15_000,
+      signal,
+    });
+    if (result.ok) return;
+    if (result.error.code === "TIMEOUT") return;
+    throw new HerdrError(result.error.code, result.error.message, result.error);
+  }
+
   async startAgent(spec: StartAgentSpec, signal?: AbortSignal): Promise<{ paneId: string }> {
     const result = await this.cli.exec<{ agent?: unknown }>(
       [

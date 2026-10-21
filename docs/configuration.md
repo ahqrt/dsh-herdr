@@ -9,6 +9,8 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
   name: dsh-herdr
   config:
     enabled: true
+    transport: cli           # cli | auto | socket
+    socketPath: ~/.config/herdr/herdr.sock
     defaultKind: pi
     defaultModel: flash
     maxParallelAgents: 3
@@ -20,6 +22,11 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
     allowCwd:
       - ~/Desktop
       - ~/code
+
+    # enabled herdr --machine profiles; only these labels are reachable
+    machines: []
+    # machines whose filesystem is mounted here (required for spawn)
+    sharedFilesystem: []
 
     # auto: split when DSH runs inside Herdr, otherwise a dedicated workspace
     topology: auto
@@ -33,6 +40,10 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 |---|---|---|---|
 | `enabled` | boolean | `true` | `false` refuses every spawn. Does not kill running agents. |
 | `herdrBin` | string | `herdr` | Path to the Herdr CLI. `HERDR_BIN` is the environment fallback. |
+| `transport` | `cli` \| `auto` \| `socket` | `cli` | `auto` tries the local socket and degrades to CLI; `socket` never falls back. |
+| `socketPath` | string | `~/.config/herdr/herdr.sock` | Local socket. `HERDR_SOCKET_PATH` overrides. |
+| `machines` | string[] | `[]` | Herdr `--machine` labels/ids the tools may target. |
+| `sharedFilesystem` | string[] | `[]` | Machine labels with a locally mounted filesystem. Remote **spawn** requires this; `list`/`read`/`message` do not. |
 | `defaultKind` | string | `pi` | Kind used when `kind` is omitted. |
 | `defaultModel` | string | `flash` | Alias/ID used for `kind=pi` when `model` is omitted. Empty = pi's own default. |
 | `aliasesFile` | string | `~/.pi/agent/model-aliases.md` | The markdown alias table. Missing file = only raw IDs resolve. |
@@ -78,6 +89,22 @@ The plugin is configured through the DSH profile's `cordis.patch.yml`. Defaults 
 | `split` | DSH inside Herdr | Split the caller's pane; requires `HERDR_ENV` and `HERDR_PANE_ID`. |
 
 The workspace map is persisted in `state.json`; closing the workspace by hand is fine — the next spawn recreates it once.
+
+## Transports
+
+The CLI is the reference and default transport. `transport: auto` tries the local
+socket for one call; if the connection fails, that process degrades to CLI for
+the rest of the session. `socket` is for validating the protocol; it does not
+fall back. The socket is local-only; remote machines always use `--machine` over
+the CLI.
+
+## Remote machines
+
+Add an existing Herdr machine profile to `machines` to target it. A remote
+delegation needs the remote filesystem mounted locally because artifacts,
+`result.md`, and the pi session path are read with ordinary file I/O. Without a
+mount, use remote `list`/`read`/`message` for observation and steering, and keep
+spawn local. Doctor checks every configured machine.
 
 ## Concurrency
 

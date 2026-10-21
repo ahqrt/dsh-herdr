@@ -64,6 +64,16 @@ pnpm pack
 
 The tarball contains `lib/`, `cordis.patch.yml`, `skill/`, `schema/`, and the docs needed at install time. `lib/` is generated; commit it only if you publish from git tags without a build step (the release workflow builds).
 
+## Transport
+
+`transport: cli` (default) uses the documented CLI only. `auto` tries the local
+Herdr socket for each call and degrades to CLI when it cannot connect; `socket`
+is strict. The socket is local-only; remote machines always use `--machine`.
+
+Remote spawn additionally requires the machine's filesystem to be mounted
+locally (`sharedFilesystem`), because artifacts and the pi session are read with
+normal file I/O. Remote `list`/`read`/`message` work without a mount.
+
 ## Optional: install the delegation skill
 
 The package ships a DSH skill that teaches the review loop and the alias rules. The tools already encode the policy in their descriptions; the skill reinforces it across sessions.

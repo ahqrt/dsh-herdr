@@ -6,9 +6,12 @@
 import { defineTool } from "@deepseek-ai/dsh-tools";
 import { Config, resolveConfig } from "./config.js";
 import { systemClock, systemIds } from "./domain/ids.js";
-import { resolvePaths } from "./domain/paths.js";
+import { expandHome, resolvePaths } from "./domain/paths.js";
 import { HerdrCli, resolveHerdrBin } from "./adapters/herdr/cli.js";
 import { HerdrCliTransport } from "./adapters/herdr/transport.js";
+import { HerdrSocketClient } from "./adapters/herdr/socket-client.js";
+import { HerdrSocketTransport } from "./adapters/herdr/socket-transport.js";
+import { MachineTransportPool } from "./adapters/transport-pool.js";
 import { FileAuditLog, FileTaskStore } from "./adapters/fs/store.js";
 import { LocalGit } from "./adapters/git/local.js";
 import { TopologyService } from "./services/topology.js";
@@ -40,16 +43,34 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
   const paths = resolvePaths(config);
 
   const cli = new HerdrCli(resolveHerdrBin(config.herdrBin));
-  const transport = new HerdrCliTransport(cli);
+  const cliTransport = new HerdrCliTransport(cli);
+  let transport: HerdrCliTransport | HerdrSocketTransport = cliTransport;
+  if (config.transport !== "cli") {
+    const socketPath = expandHome(
+      process.env.HERDR_SOCKET_PATH || config.socketPath || "~/.config/herdr/herdr.sock",
+    );
+    transport = new HerdrSocketTransport(
+      new HerdrSocketClient(socketPath),
+      cliTransport,
+      config.transport === "socket" ? "socket" : "auto",
+    );
+  }
   const store = new FileTaskStore(paths.stateFile, systemClock);
   const audit = new FileAuditLog(paths.auditFile);
   const git = new LocalGit();
 
-  const topology = new TopologyService({ transport, store, config, env: process.env });
-  const worktree = new WorktreeService({ git, config, paths });
-  const harvest = new HarvestService({ transport, git, config });
-  const spawn = new SpawnService({
+  const transports = new MachineTransportPool(
     transport,
+    config,
+    (machine) =>
+      new HerdrCliTransport(new HerdrCli(resolveHerdrBin(config.herdrBin), process.env, machine)),
+  );
+
+  const topology = new TopologyService({ transports, store, config, env: process.env });
+  const worktree = new WorktreeService({ git, config, paths });
+  const harvest = new HarvestService({ transports, git, config });
+  const spawn = new SpawnService({
+    transports,
     store,
     git,
     topology,
@@ -61,17 +82,17 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
     clock: systemClock,
     ids: systemIds,
   });
-  const message = new MessageService({ transport, store, audit });
+  const message = new MessageService({ transports, store, audit });
   const inbox = new InboxService({ store });
   const transcript = new TranscriptService(store);
-  const lifecycle = new LifecycleService({ transport, store, audit, worktree });
-  const doctor = new DoctorService({ transport, config, paths, env: process.env });
+  const lifecycle = new LifecycleService({ transports, store, audit, worktree });
+  const doctor = new DoctorService({ transports, config, paths, env: process.env });
 
   const deps = {
     config,
     paths,
     store,
-    transport,
+    transports,
     spawn,
     harvest,
     message,

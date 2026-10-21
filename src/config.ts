@@ -10,6 +10,8 @@ export type { PluginConfig };
 export const Config = z.object({
   enabled: z.boolean().default(DEFAULT_CONFIG.enabled),
   herdrBin: z.string().default(DEFAULT_CONFIG.herdrBin),
+  transport: z.string().default(DEFAULT_CONFIG.transport),
+  socketPath: z.string().default(DEFAULT_CONFIG.socketPath),
   defaultKind: z.string().default(DEFAULT_CONFIG.defaultKind),
   defaultModel: z.string().default(DEFAULT_CONFIG.defaultModel),
   aliasesFile: z.string().default(DEFAULT_CONFIG.aliasesFile),
@@ -29,4 +31,6 @@ export const Config = z.object({
   stateFile: z.string().default(DEFAULT_CONFIG.stateFile),
   auditFile: z.string().default(DEFAULT_CONFIG.auditFile),
   allowCwd: z.array(z.string()).default([]),
+  machines: z.array(z.string()).default([]),
+  sharedFilesystem: z.array(z.string()).default([]),
 });

@@ -1,8 +1,9 @@
 import type { AuditLog, TaskStore } from "../ports/store.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 export type MessageKind = "NOTE" | "REVIEW_FINDINGS" | "ACCEPT" | "REJECT" | "ANSWER";
 export interface MessageInput {
     target: string;
+    machine?: string;
     message: string;
     kind?: MessageKind;
     round?: number;
@@ -15,10 +16,11 @@ export interface MessageResult {
     startedTurn: boolean;
     status?: string;
     target: string;
+    machine?: string;
     message: string;
 }
 export interface MessageDeps {
-    transport: HerdrTransport;
+    transports: TransportPool;
     store: TaskStore;
     audit: AuditLog;
 }

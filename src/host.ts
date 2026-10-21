@@ -44,7 +44,7 @@ export interface ToolFactoryDeps {
   config: import("./defaults.js").PluginConfig;
   paths: import("./domain/paths.js").Paths;
   store: import("./ports/store.js").TaskStore;
-  transport: import("./ports/transport.js").HerdrTransport;
+  transports: import("./ports/transports.js").TransportPool;
   spawn: import("./services/spawn.js").SpawnService;
   harvest: import("./services/harvest.js").HarvestService;
   message: import("./services/message.js").MessageService;

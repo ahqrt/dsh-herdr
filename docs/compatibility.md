@@ -13,6 +13,12 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.3.0 additions
+
+Additive: `transport`, `socketPath`, `machines`, `sharedFilesystem`,
+`machine` on spawn/result/message/list, and `agent.machine` in the result.
+The CLI remains the default transport; the socket is opt-in and protocol 22.
+
 ## 0.2.0 additions
 
 Additive only: `herdr_inbox`, `herdr_read_agent`, `isolated`, `remove_worktree`, `worktree`, and `timing.queuedMs`. Existing tool names and parameters are unchanged; a 0.1 client that ignores the new fields still works.
@@ -23,7 +29,7 @@ Additive only: `herdr_inbox`, `herdr_read_agent`, `isolated`, `remove_worktree`,
 |---|---|---|
 | DSH | `0.2.1-rc.2` | Headless `web` profile boot: all nine tools activated (the loader compiles every parameter/output schema). The tool and workingDirectory APIs are the only host dependencies. |
 | Herdr client | `0.9.4` | Hard floor `0.9.0` (the `agent start --kind` contract). |
-| Herdr server | `0.9.1` | Client/server protocol `22` at the time of writing. |
+| Herdr server | `0.9.1` | Client/server protocol `22` at the time of writing. The opt-in socket adapter targets protocol 22 and falls back on connect failures. |
 | Node | `22.22.3`, `24.x` in CI | ESM only; no native modules. |
 | macOS | 14/15 (arm64) | Primary development platform. |
 | Linux | CI (ubuntu-latest) | Unit + fake-herdr integration. |

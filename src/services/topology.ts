@@ -10,11 +10,11 @@ import { HerdrError } from "../domain/errors.js";
 import { repoKey, workspaceLabel } from "../domain/paths.js";
 import type { PaneTarget } from "../domain/types.js";
 import type { PluginConfig } from "../defaults.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 import type { TaskStore } from "../ports/store.js";
 
 export interface TopologyDeps {
-  transport: HerdrTransport;
+  transports: TransportPool;
   store: TaskStore;
   config: PluginConfig;
   env: NodeJS.ProcessEnv;
@@ -26,9 +26,11 @@ export class TopologyService {
   async ensurePane(input: {
     cwd: string;
     name: string;
+    machine?: string;
     signal?: AbortSignal;
   }): Promise<PaneTarget> {
-    const { transport, config, env } = this.deps;
+    const { config, env } = this.deps;
+    const transport = this.deps.transports.resolve(input.machine);
     const inHerdr = env.HERDR_ENV === "1" && Boolean(env.HERDR_PANE_ID);
     const mode =
       config.topology === "split" || config.topology === "workspace"
@@ -58,10 +60,12 @@ export class TopologyService {
   private async ensureWorkspacePane(input: {
     cwd: string;
     name: string;
+    machine?: string;
     signal?: AbortSignal;
   }): Promise<PaneTarget> {
-    const { transport, store, config } = this.deps;
-    const key = repoKey(input.cwd);
+    const { store, config } = this.deps;
+    const transport = this.deps.transports.resolve(input.machine);
+    const key = `${input.machine ?? "local"}:${repoKey(input.cwd)}`;
     const label = workspaceLabel(config.workspaceLabel, input.cwd);
 
     let workspaceId = (await store.getWorkspace(key))?.workspaceId;

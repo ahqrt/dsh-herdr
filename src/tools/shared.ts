@@ -71,7 +71,7 @@ export function renderAgentResult(value: AgentResult): ContentBlock[] {
   );
   if (value.agent.name || value.agent.paneId) {
     lines.push(
-      `agent: ${value.agent.name ?? "?"}${value.agent.paneId ? ` · pane ${value.agent.paneId}` : ""}${value.agent.tabId ? ` · tab ${value.agent.tabId}` : ""}`,
+      `agent: ${value.agent.name ?? "?"}${value.agent.paneId ? ` · pane ${value.agent.paneId}` : ""}${value.agent.tabId ? ` · tab ${value.agent.tabId}` : ""}${value.agent.machine ? ` · machine ${value.agent.machine}` : ""}`,
     );
   }
   if (value.worktree) {

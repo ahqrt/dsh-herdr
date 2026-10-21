@@ -6,7 +6,11 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-const argv = process.argv.slice(2);
+let argv = process.argv.slice(2);
+if (argv[0] === "--machine") {
+  process.env.FAKE_HERDR_LAST_MACHINE = argv[1];
+  argv = argv.slice(2);
+}
 const statePath = process.env.FAKE_HERDR_STATE;
 const sessionPath = process.env.FAKE_HERDR_SESSION;
 const touchFile = process.env.FAKE_HERDR_TOUCH;
@@ -152,6 +156,14 @@ if (argv[0] === "agent" && argv[1] === "prompt") {
 
   agent.status = "idle";
   save(state);
+  out({ result: { agent: agentView(agent) } });
+  process.exit(0);
+}
+
+if (argv[0] === "agent" && argv[1] === "wait") {
+  const target = argv[2];
+  const agent = Object.values(state.agents).find((a) => a.name === target || a.paneId === target);
+  if (!agent) fail("not_found", `no agent ${target}`);
   out({ result: { agent: agentView(agent) } });
   process.exit(0);
 }

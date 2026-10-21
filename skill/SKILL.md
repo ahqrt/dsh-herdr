@@ -61,7 +61,13 @@ herdr_message_agent({
 - 最终答复不够时，用 `herdr_read_agent({target, from, limit})` 按 turn 翻 pi session，看它实际跑了什么命令。
 - 长任务或并行改同一仓库时，spawn 加 `isolated:true`，它在独立 worktree 里跑，结果带 `worktree` 路径；确认后再合并，清理用 `herdr_close_agent({remove_worktree:true})`。
 
-## 6. blocked
+## 6. 远程机器
+
+- 只有 `machines` 里配置过的 label 才能用；传 `machine` 给 spawn/list/get_result/message。
+- 远程 **spawn** 还要求该机器在 `sharedFilesystem` 里（artifact 和 session 要本地可读）；没有共享挂载时，只做远程 `list` / 读取 / 发消息。
+- 任务记录会记住 machine，后续 `get_result` / `close` 不用再传。
+
+## 7. blocked
 
 `status: "blocked"` 表示子 agent 在等审批或提问。
 
@@ -69,14 +75,14 @@ herdr_message_agent({
 2. 用 `herdr_message_agent` 把人的回答发回去。
 3. **绝不自己批准。**
 
-## 7. 中断和收尾
+## 8. 中断和收尾
 
 - 只想停当前 turn：`herdr_interrupt_agent`（发 Escape，pane 和 session 保留）。
 - pane 默认留着，用户明确说关才 `herdr_close_agent`。
 - 只关 `owned: true` 的 pane；用户自己开的 pane 不碰。
 - 任务产物在 `~/.dsh/herdr/tasks/<taskId>/`（`result.md`、`diff.patch`、`prompt.md`）。
 
-## 8. 独立 review 的独立性
+## 9. 独立 review 的独立性
 
 跨家族才算独立：grok（xAI）× gpt（OpenAI）× claude（Anthropic）。同家族互审只是重复劳动。
 

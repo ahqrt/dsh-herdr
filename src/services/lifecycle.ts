@@ -3,11 +3,11 @@
 import { HerdrError } from "../domain/errors.js";
 import type { AgentInfo, TaskRecord } from "../domain/types.js";
 import type { AuditLog, TaskStore } from "../ports/store.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 import type { WorktreeService } from "./worktree.js";
 
 export interface LifecycleDeps {
-  transport: HerdrTransport;
+  transports: TransportPool;
   store: TaskStore;
   audit: AuditLog;
   worktree: WorktreeService;
@@ -30,7 +30,7 @@ export class LifecycleService {
   constructor(private readonly deps: LifecycleDeps) {}
 
   async close(input: CloseInput): Promise<CloseResult> {
-    const { transport, store, audit } = this.deps;
+    const { store, audit } = this.deps;
     const record = await store.find(input.target);
     if (!record) {
       throw new HerdrError(
@@ -39,6 +39,7 @@ export class LifecycleService {
         { remediation: "close user-owned panes in the Herdr UI" },
       );
     }
+    const transport = this.deps.transports.resolve(record.machine);
     if (!record.paneId) {
       throw new HerdrError("TASK_NOT_FOUND", `task ${record.taskId} has no pane`, {
         remediation: "the task may have failed before a pane was created",
@@ -96,7 +97,7 @@ export class LifecycleService {
     target: string,
     signal?: AbortSignal,
   ): Promise<{ interrupted: boolean; message: string }> {
-    const { transport, store, audit } = this.deps;
+    const { store, audit } = this.deps;
     const record = await store.find(target);
     if (!record) {
       throw new HerdrError(
@@ -110,6 +111,7 @@ export class LifecycleService {
     if (!record.name) {
       throw new HerdrError("TASK_NOT_FOUND", `task ${record.taskId} has no agent name`);
     }
+    const transport = this.deps.transports.resolve(record.machine);
     await transport.sendKeys(record.name, ["esc"], signal);
     await store.update(record.taskId, { status: "interrupted", updatedAt: Date.now() });
     audit.write({ event: "interrupt", taskId: record.taskId, name: record.name });
@@ -120,12 +122,18 @@ export class LifecycleService {
   }
 
   /** Owned records joined with the live Herdr fleet. */
-  async list(options: { ownedOnly?: boolean; signal?: AbortSignal } = {}): Promise<FleetRow[]> {
-    const { transport, store } = this.deps;
-    const [records, live] = await Promise.all([
+  async list(
+    options: { ownedOnly?: boolean; machine?: string; signal?: AbortSignal } = {},
+  ): Promise<FleetRow[]> {
+    const { store } = this.deps;
+    const machine = options.machine;
+    const transport = this.deps.transports.resolve(machine);
+    const [allRecords, live] = await Promise.all([
       store.list(),
       transport.listAgents(options.signal).catch(() => [] as AgentInfo[]),
     ]);
+    const scope = machine ?? "local";
+    const records = allRecords.filter((task) => (task.machine ?? "local") === scope);
     const byName = new Map(live.filter((agent) => agent.name).map((agent) => [agent.name!, agent]));
     const byPane = new Map(
       live.filter((agent) => agent.paneId).map((agent) => [agent.paneId!, agent]),
@@ -150,6 +158,7 @@ export class LifecycleService {
         paneId: agent?.paneId ?? record.paneId,
         tabId: agent?.tabId ?? record.tabId,
         role: record.role,
+        machine: record.machine,
         ageMs: Date.now() - record.createdAt,
       });
     }
@@ -185,5 +194,6 @@ export interface FleetRow {
   paneId?: string;
   tabId?: string;
   role?: TaskRecord["role"];
+  machine?: string;
   ageMs?: number;
 }

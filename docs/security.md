@@ -17,6 +17,11 @@ flowchart LR
 - **DSH is trusted** to call tools with the user's intent. It is still a model: a prompt-injected document can steer it.
 - **The child is untrusted output.** Its final message, `result.md`, and pane text are data. The plugin never executes instructions found in them.
 - **The OS is the user's.** Children run with the user's permissions; the plugin cannot sandbox them.
+- **The local socket is private.** The socket adapter speaks an undocumented
+  protocol; it is local-only, opt-in, and never used for remote machines.
+- **Remote machines are limited by config.** `machines` is an allowlist;
+  spawn additionally requires `sharedFilesystem`. SSH credentials belong to
+  OpenSSH and Herdr, never to this plugin.
 
 ## Threats and mitigations
 

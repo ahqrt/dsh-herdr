@@ -19,6 +19,7 @@ import type { AgentInfo, AgentResult, SpawnInput, TaskRecord } from "../domain/t
 import type { PluginConfig } from "../defaults.js";
 import type { AuditLog, GitService, TaskStore } from "../ports/store.js";
 import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 import type { Paths } from "../domain/paths.js";
 import type { Clock, IdSource } from "../domain/ids.js";
 import type { HarvestService } from "./harvest.js";
@@ -26,7 +27,7 @@ import type { TopologyService } from "./topology.js";
 import type { WorktreeService } from "./worktree.js";
 
 export interface SpawnDeps {
-  transport: HerdrTransport;
+  transports: TransportPool;
   store: TaskStore;
   git: GitService;
   topology: TopologyService;
@@ -46,7 +47,7 @@ export class SpawnService {
   constructor(private readonly deps: SpawnDeps) {}
 
   async spawn(input: SpawnInput): Promise<AgentResult> {
-    const { config, store, transport, clock, ids, paths, audit } = this.deps;
+    const { config, store, clock, ids, paths, audit } = this.deps;
 
     if (!config.enabled) {
       throw new HerdrError(
@@ -55,6 +56,18 @@ export class SpawnService {
         {
           remediation:
             "set enabled: true in the tool-herdr config, or restart with a different profile",
+        },
+      );
+    }
+
+    const transport = this.deps.transports.resolve(input.machine);
+    if (input.machine && !this.deps.transports.sharesFilesystem(input.machine)) {
+      throw new HerdrError(
+        "VALIDATION_ERROR",
+        `machine "${input.machine}" is not declared as sharing a filesystem with this host`,
+        {
+          remediation:
+            "remote delegation needs a mounted filesystem for artifacts/session paths; add the label to sharedFilesystem, or only list/read/message remote agents",
         },
       );
     }
@@ -178,6 +191,7 @@ export class SpawnService {
       updatedAt: now,
       queuedMs: slot.queuedMs || undefined,
       worktree,
+      machine: input.machine,
       clientTaskId: input.clientTaskId,
       baseline: await this.deps.git.baseline(cwd).catch(() => undefined),
     };
@@ -203,7 +217,12 @@ export class SpawnService {
 
     let pane;
     try {
-      pane = await this.deps.topology.ensurePane({ cwd, name, signal: input.signal });
+      pane = await this.deps.topology.ensurePane({
+        cwd,
+        name,
+        machine: input.machine,
+        signal: input.signal,
+      });
     } catch (error) {
       await store.update(taskId, {
         status: "failed",
@@ -259,7 +278,7 @@ export class SpawnService {
 
     let boot: "idle" | "blocked";
     try {
-      boot = await this.waitForBoot(name, config.startTimeoutMs, input.signal);
+      boot = await this.waitForBoot(transport, name, config.startTimeoutMs, input.signal);
     } catch (error) {
       await store.update(taskId, {
         status: "failed",
@@ -312,7 +331,7 @@ export class SpawnService {
     const deadline = clock.now() + timeoutMs;
     let outcome;
     try {
-      outcome = await this.submit(name, promptText, deadline, input.signal);
+      outcome = await this.submit(transport, name, promptText, deadline, input.signal);
     } catch (error) {
       const code = error instanceof HerdrError ? error.code : "VALIDATION_ERROR";
       await store.update(taskId, {
@@ -443,6 +462,7 @@ export class SpawnService {
   }
 
   private async submit(
+    transport: HerdrTransport,
     name: string,
     promptText: string,
     deadline: number,
@@ -453,7 +473,7 @@ export class SpawnService {
       if (attempt > 0) await sleep(2_000);
       const remaining = Math.max(10_000, deadline - Date.now());
       try {
-        outcome = await this.deps.transport.promptAgent(
+        outcome = await transport.promptAgent(
           name,
           promptText,
           {
@@ -465,7 +485,7 @@ export class SpawnService {
         );
       } catch (error) {
         if (error instanceof HerdrError && error.code === "ABORTED") {
-          await this.interruptQuietly(name);
+          await this.interruptQuietly(transport, name);
           throw error;
         }
         throw error;
@@ -476,6 +496,7 @@ export class SpawnService {
   }
 
   private async waitForBoot(
+    transport: HerdrTransport,
     name: string,
     timeoutMs: number,
     signal?: AbortSignal,
@@ -484,7 +505,7 @@ export class SpawnService {
     while (Date.now() < deadline) {
       if (signal?.aborted)
         throw new HerdrError("ABORTED", "spawn aborted while waiting for agent boot");
-      const agent = await this.deps.transport.getAgent(name, signal).catch(() => undefined);
+      const agent = await transport.getAgent(name, signal).catch(() => undefined);
       if (agent?.status === "idle" || agent?.status === "done") return "idle";
       if (agent?.status === "blocked") return "blocked";
       await sleep(300);
@@ -494,9 +515,9 @@ export class SpawnService {
     });
   }
 
-  private async interruptQuietly(name: string): Promise<void> {
+  private async interruptQuietly(transport: HerdrTransport, name: string): Promise<void> {
     try {
-      await this.deps.transport.sendKeys(name, ["esc"]);
+      await transport.sendKeys(name, ["esc"]);
     } catch {
       /* the pane may already be gone */
     }

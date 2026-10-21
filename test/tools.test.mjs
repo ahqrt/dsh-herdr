@@ -25,7 +25,12 @@ function build() {
     config,
     paths,
     store: {},
-    transport: {},
+    transports: {
+      local: () => null,
+      resolve: () => null,
+      machines: () => [],
+      sharesFilesystem: () => false,
+    },
     spawn: {},
     harvest: {},
     message: {},
@@ -172,7 +177,14 @@ test("fleet, message, and doctor renderers are stable", () => {
     checks: [{ status: "fail", label: "herdr", detail: "missing" }],
     next: ["install herdr"],
     aliases: [{ alias: "flash", model: "commandcode/x", billing: "", thinking: [] }],
-    runtime: { node: "v22", platform: "darwin arm64", topology: "workspace", inHerdrPane: false },
+    runtime: {
+      node: "v22",
+      platform: "darwin arm64",
+      topology: "workspace",
+      inHerdrPane: false,
+      machines: [],
+      transport: "cli",
+    },
   });
   assert.match(doctor[0].text, /PROBLEMS FOUND/);
   assert.match(doctor[0].text, /install herdr/);

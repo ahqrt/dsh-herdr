@@ -82,7 +82,10 @@ Consequences:
 | `src/ports/transport.ts` | The outbound Herdr contract. |
 | `src/ports/store.ts` | Task store, audit, git contracts. |
 | `src/adapters/herdr/cli.ts` | Spawn, timeout, abort, envelope, error mapping. |
-| `src/adapters/herdr/transport.ts` | Response shapes → domain operations. |
+| `src/adapters/herdr/transport.ts` | Response shapes → domain operations (CLI). |
+| `src/adapters/herdr/socket-client.ts` | One-connection-per-request socket client, typed errors. |
+| `src/adapters/herdr/socket-transport.ts` | Socket transport with a connect-only CLI fallback. |
+| `src/adapters/transport-pool.ts` | Per-machine transport selection and shared-filesystem policy. |
 | `src/adapters/fs/store.ts` | Atomic, locked, versioned state file; rotating audit. |
 | `src/adapters/fs/memory-store.ts` | Test/embed store. |
 | `src/adapters/git/local.ts` | Baseline and bounded diff. |
@@ -151,11 +154,22 @@ Two state machines are intentionally separate.
 
 A pi session file is append-only across turns. Harvest only accepts its last assistant message when `session.mtime >= promptedAt - 1s`. Otherwise the message belongs to an earlier turn and is ignored; the fallback artifacts take over. This is what makes a **follow-up** message safe on the same session file.
 
+## Transports and machines
+
+- **Local:** `transport: auto` tries the socket once; a connect failure degrades
+  the process to CLI. `socket` is strict; `cli` never touches the socket.
+- **Remote:** one CLI transport per `--machine` label, cached by the pool.
+  Records carry `machine`; services resolve it from the record, so a handle
+  remains correct after a restart.
+- **Spawn on a remote machine** requires `sharedFilesystem`, because the
+  harvest/diff/session readers use local file APIs. Observation and messaging
+  work without it.
+
 ## Persistence
 
 ```
 ~/.dsh/herdr/
-├── state.json          # schemaVersion 1, tasks + workspace map
+├── state.json          # schemaVersion 1, tasks + per-machine workspace map
 ├── state.json.lock     # advisory cross-process lock
 ├── audit.ndjson        # append-only events, rotates at 5 MB
 ├── tasks/<taskId>/

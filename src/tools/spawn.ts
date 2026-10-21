@@ -65,6 +65,11 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
         description:
           "Optional idempotency key. A repeated call with the same key returns the existing task instead of spawning again.",
       },
+      machine: {
+        type: "string",
+        description:
+          "Herdr --machine label enabled in the plugin config. Requires the remote filesystem to be mounted locally (sharedFilesystem).",
+      },
       isolated: {
         type: "boolean",
         description:
@@ -105,6 +110,7 @@ export function createSpawnTool({ defineTool, deps }: ToolFactoryOptions) {
           : undefined,
         clientTaskId: typeof args.client_task_id === "string" ? args.client_task_id : undefined,
         isolated: args.isolated === true,
+        machine: typeof args.machine === "string" ? args.machine : undefined,
         sessionId: exec.agent?.session?.id,
         signal: exec.signal,
       });

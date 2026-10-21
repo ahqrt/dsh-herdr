@@ -5,12 +5,13 @@ import { HerdrError } from "../domain/errors.js";
 import { buildAgentMessage, buildReviewFindings } from "../domain/prompt.js";
 import type { AgentInfo } from "../domain/types.js";
 import type { AuditLog, TaskStore } from "../ports/store.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 
 export type MessageKind = "NOTE" | "REVIEW_FINDINGS" | "ACCEPT" | "REJECT" | "ANSWER";
 
 export interface MessageInput {
   target: string;
+  machine?: string;
   message: string;
   kind?: MessageKind;
   round?: number;
@@ -24,11 +25,12 @@ export interface MessageResult {
   startedTurn: boolean;
   status?: string;
   target: string;
+  machine?: string;
   message: string;
 }
 
 export interface MessageDeps {
-  transport: HerdrTransport;
+  transports: TransportPool;
   store: TaskStore;
   audit: AuditLog;
 }
@@ -37,9 +39,16 @@ export class MessageService {
   constructor(private readonly deps: MessageDeps) {}
 
   async send(input: MessageInput): Promise<MessageResult> {
-    const { transport, store, audit } = this.deps;
+    const { store, audit } = this.deps;
     const record = await store.find(input.target);
     const target = record?.name ?? input.target;
+    if (record?.machine && input.machine && record.machine !== input.machine) {
+      throw new HerdrError(
+        "VALIDATION_ERROR",
+        `task ${record.taskId} runs on machine "${record.machine}", not "${input.machine}"`,
+      );
+    }
+    const transport = this.deps.transports.resolve(record?.machine ?? input.machine);
 
     const body =
       input.kind === "REVIEW_FINDINGS"

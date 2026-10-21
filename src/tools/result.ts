@@ -23,6 +23,11 @@ export function createResultTool({ defineTool, deps }: ToolFactoryOptions) {
         required: true,
         description: "Task id, agent name, or pane id.",
       },
+      machine: {
+        type: "string",
+        description:
+          "Herdr --machine label for an external agent (owned tasks remember their machine).",
+      },
       wait: {
         type: "boolean",
         description: "Block until settled (default: true when the task is still running).",
@@ -51,7 +56,8 @@ export function createResultTool({ defineTool, deps }: ToolFactoryOptions) {
     },
     execute: wrapExecute(async (args: Record<string, unknown>, exec) => {
       const target = String(args.target ?? "");
-      const record = await resolveRecord(target, deps, exec.signal);
+      const machine = typeof args.machine === "string" ? args.machine : undefined;
+      const record = await resolveRecord(target, machine, deps, exec.signal);
       if (!record) {
         throw new HerdrError("TASK_NOT_FOUND", `no agent or task matches "${target}"`, {
           remediation: "call herdr_list_agents to see the live names and pane ids",
@@ -60,9 +66,10 @@ export function createResultTool({ defineTool, deps }: ToolFactoryOptions) {
 
       const shouldWait =
         args.wait === true || (args.wait !== false && isActiveStatus(record.status));
+      const transport = deps.transports.resolve(record.machine);
       if (shouldWait) {
         const settled = await waitForSettle(
-          deps.transport,
+          transport,
           record.name ?? record.paneId ?? target,
           typeof args.timeout_ms === "number" ? args.timeout_ms : 600_000,
           exec.signal,
@@ -91,13 +98,15 @@ export function createResultTool({ defineTool, deps }: ToolFactoryOptions) {
 
 async function resolveRecord(
   target: string,
+  machine: string | undefined,
   deps: ToolFactoryOptions["deps"],
   signal?: AbortSignal,
 ): Promise<TaskRecord | undefined> {
   const known = await deps.store.find(target);
   if (known) return known;
 
-  const live = await deps.transport.getAgent(target, signal);
+  const transport = deps.transports.resolve(machine);
+  const live = await transport.getAgent(target, signal);
   if (!live || (!live.paneId && !live.name)) return undefined;
 
   const safe = String(live.name ?? live.paneId ?? target)
@@ -119,6 +128,7 @@ async function resolveRecord(
     tabId: live.tabId,
     workspaceId: live.workspaceId,
     sessionPath: live.sessionPath,
+    machine,
     external: true,
   };
 }

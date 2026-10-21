@@ -1,14 +1,14 @@
 import type { AgentResult, TaskRecord } from "../domain/types.js";
 import type { PluginConfig } from "../defaults.js";
 import type { GitService } from "../ports/store.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 export interface HarvestOptions {
     signal?: AbortSignal;
     tailLines?: number;
     withDiff?: boolean;
 }
 export interface HarvestDeps {
-    transport: HerdrTransport;
+    transports: TransportPool;
     git: GitService;
     config: PluginConfig;
 }

@@ -13,7 +13,7 @@ import {
 import { ensureDir, type Paths } from "../domain/paths.js";
 import { formatVersion, MIN_HERDR_VERSION } from "../domain/version.js";
 import type { PluginConfig } from "../defaults.js";
-import type { HerdrTransport } from "../ports/transport.js";
+import type { TransportPool } from "../ports/transports.js";
 
 export type CheckStatus = "ok" | "warn" | "fail";
 
@@ -33,11 +33,13 @@ export interface DoctorReport {
     platform: string;
     topology: string;
     inHerdrPane: boolean;
+    machines: string[];
+    transport: string;
   };
 }
 
 export interface DoctorDeps {
-  transport: HerdrTransport;
+  transports: TransportPool;
   config: PluginConfig;
   paths: Paths;
   env: NodeJS.ProcessEnv;
@@ -47,7 +49,8 @@ export class DoctorService {
   constructor(private readonly deps: DoctorDeps) {}
 
   async run(): Promise<DoctorReport> {
-    const { transport, config, paths, env } = this.deps;
+    const { config, paths, env } = this.deps;
+    const transport = this.deps.transports.local();
     const checks: DoctorCheck[] = [];
     const next: string[] = [];
     const add = (status: CheckStatus, label: string, detail: string) => {
@@ -144,10 +147,27 @@ export class DoctorService {
       next.push(`fix permissions on ${paths.root}`);
     }
 
+    add(
+      "ok",
+      "transport",
+      `${config.transport}${config.transport === "auto" ? " (socket, CLI fallback)" : ""}`,
+    );
+
     const inHerdr = env.HERDR_ENV === "1" && Boolean(env.HERDR_PANE_ID);
     const topology =
       config.topology === "auto" ? (inHerdr ? "split" : "workspace") : config.topology;
     add("ok", "topology", `${topology}${inHerdr ? ` (inside pane ${env.HERDR_PANE_ID})` : ""}`);
+
+    for (const machine of this.deps.transports.machines()) {
+      const remote = this.deps.transports.resolve(machine);
+      const status = await remote.serverStatus().catch(() => undefined);
+      add(
+        status ? "ok" : "warn",
+        `machine ${machine}`,
+        status ? "reachable through herdr --machine" : "no response from herdr --machine",
+      );
+      if (!status) next.push(`check \`herdr --machine ${machine} status\``);
+    }
 
     const piVersion = await versionOf("pi");
     add(
@@ -166,6 +186,8 @@ export class DoctorService {
         platform: `${process.platform} ${process.arch}`,
         topology,
         inHerdrPane: inHerdr,
+        machines: this.deps.transports.machines(),
+        transport: config.transport,
       },
     };
   }

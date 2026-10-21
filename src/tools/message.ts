@@ -25,6 +25,11 @@ export function createMessageTool({ defineTool, deps }: ToolFactoryOptions) {
         required: true,
         description: "The text to deliver.",
       },
+      machine: {
+        type: "string",
+        description:
+          "Herdr --machine label for an external target (owned tasks remember their machine).",
+      },
       kind: {
         type: "string",
         enum: KINDS,
@@ -57,6 +62,7 @@ export function createMessageTool({ defineTool, deps }: ToolFactoryOptions) {
     execute: wrapExecute(async (args: Record<string, unknown>, exec) =>
       deps.message.send({
         target: String(args.target ?? ""),
+        machine: typeof args.machine === "string" ? args.machine : undefined,
         message: String(args.message ?? ""),
         kind: KINDS.includes(args.kind as MessageKind) ? (args.kind as MessageKind) : undefined,
         round: typeof args.round === "number" ? args.round : undefined,

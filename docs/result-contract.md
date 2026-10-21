@@ -17,7 +17,8 @@ Every delegation resolves to one `AgentResult` object (`schemaVersion: 1`). The 
     "workspaceId": "wV",
     "kind": "pi",
     "model": "commandcode/deepseek/deepseek-v4.1-flash",
-    "thinking": "high"
+    "thinking": "high",
+    "machine": "builder-01"
   },
   "herdrStatus": "idle",
   "sessionPath": "/Users/me/.pi/agent/sessions/.../x.jsonl",
@@ -59,6 +60,7 @@ Every delegation resolves to one `AgentResult` object (`schemaVersion: 1`). The 
 | `status` | Our lifecycle: `starting · working · blocked · idle · running · completed · failed · gone · closed · interrupted`. |
 | `herdrStatus` | Herdr's raw state at harvest: `idle · working · blocked · done · unknown`. |
 | `role` | `worker` or `reviewer`. |
+| `agent.machine` | The Herdr `--machine` label; absent means local. |
 | `summary` | `result.md` summary → first line of the final message → first body line → a status sentence. |
 | `finalMessage` | pi: the exact last assistant message **only if** the session file changed after `promptedAt`. |
 | `result.text` | `result.md` body, or the final message when no artifact exists. |
