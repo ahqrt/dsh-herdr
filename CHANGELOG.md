@@ -6,6 +6,13 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-21
+
+### Fixed
+
+- Correct the install version references in the README and docs shipped in the
+  0.3.0 tarball. No code changes.
+
 ## [0.3.0] - 2026-10-21
 
 ### Added
