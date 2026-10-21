@@ -1,6 +1,6 @@
 {
   "name": "dsh-herdr",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Delegate subtasks to Herdr-managed coding agents from DeepSeek Harness: pick the model, keep the pane, harvest the exact result, review in DSH.",
   "type": "module",
   "main": "./lib/index.js",

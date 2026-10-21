@@ -6,6 +6,13 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-21
+
+### Changed
+
+- Release-infrastructure verification for OIDC trusted publishing; no runtime
+  code changes.
+
 ## [0.5.0] - 2026-10-21
 
 ### Added

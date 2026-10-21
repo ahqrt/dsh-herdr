@@ -79,11 +79,11 @@ flowchart LR
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.5.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.5.1.tgz`（开发期也可以用 `link:/path/to/checkout`）。
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
-`dsh-herdr@0.5.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
+`dsh-herdr@0.5.1` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
 
 ### 装进 CLI profile
 
