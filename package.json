@@ -80,8 +80,7 @@
     "format:check": "biome format src test scripts"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "packageManager": "pnpm@12.4.1"
 }
