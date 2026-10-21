@@ -13,6 +13,11 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.9.0 additions
+
+Additive: panel search, Markdown review-packet copy, cwd copy, and a `summary`
+field on the task detail response. No new routes or mutations.
+
 ## 0.8.0 additions
 
 Additive: read-only `GET /herdr/api/live`, bulk selection in the panel, and

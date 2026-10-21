@@ -85,7 +85,8 @@ function setup() {
       resolve: async () => ({
         io: {
           readText: async (path) => {
-            if (path.endsWith("result.md")) return "---\nstatus: completed\n---\nbody text";
+            if (path.endsWith("result.md"))
+              return "---\nstatus: completed\nsummary: a short summary\n---\nbody text";
             if (path.endsWith("session.jsonl")) return "not used";
             return undefined;
           },
@@ -135,6 +136,7 @@ test("task detail returns result, final message, and diff", async () => {
     assert.equal(res.status, 200);
     const task = JSON.parse(res.body).task;
     assert.equal(task.name, "worker-a");
+    assert.equal(task.summary, "a short summary");
     assert.match(task.result.text, /body text/);
     assert.match(task.diff.text, /\+added line/);
   } finally {

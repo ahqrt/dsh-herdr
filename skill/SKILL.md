@@ -18,7 +18,7 @@ description: "Delegate a subtask to a Herdr-managed coding agent (pi/agy/claude/
 
 如果配置了原生的 `herdr_subagent` 工具（`dsh-tool-subagent` + `provider: herdr`），简单的独立任务可以用它，DSH 会显示原生 subagent 卡片；需要 diff、session、artifact 或 blocked 问题时仍用 `herdr_spawn_agent`。
 
-DSH Web 端右侧栏有 `Herdr` 面板，可以看实时舰队、选中任务的最终消息、`result.md` 和按文件分组的 diff；外部 agent 显示只读 pane 输出，自有任务可以单个或批量 interrupt/close。
+DSH Web 端右侧栏有 `Herdr` 面板：可搜索舰队、看外部 agent 的只读 pane 输出、任务的最终消息/`result.md`/按文件 diff，并复制 review packet；自有任务可以单个或批量 interrupt/close。
 
 ## 2. 派活
 

@@ -6,6 +6,16 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-21
+
+### Added
+
+- **Fleet search**: filter by name, cwd, kind, model, or task id.
+- **Copy review packet**: one Markdown block with task metadata, summary,
+  final message, diff, and `result.md`.
+- **Copy cwd** from the task detail for opening the worktree elsewhere.
+- Task detail now exposes the `result.md` summary separately.
+
 ## [0.8.0] - 2026-10-21
 
 ### Added

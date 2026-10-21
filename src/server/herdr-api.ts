@@ -9,6 +9,7 @@ import { HerdrError } from "../domain/errors.js";
 import { type Paths } from "../domain/paths.js";
 import { extractSessionResultFromText } from "../domain/session.js";
 import { artifactPaths } from "../domain/prompt.js";
+import { parseResultMarkdown } from "../domain/result-md.js";
 import type { MachineRuntimePool } from "../ports/machine.js";
 import type { TaskStore } from "../ports/store.js";
 import type { TransportPool } from "../ports/transports.js";
@@ -212,6 +213,7 @@ async function taskDetail(deps: HerdrApiDeps, target: string) {
   const finalMessage = sessionText
     ? (extractSessionResultFromText(sessionText)?.text ?? "").trim()
     : "";
+  const parsedResult = resultText ? parseResultMarkdown(resultText) : undefined;
 
   return {
     taskId: record.taskId,
@@ -231,6 +233,7 @@ async function taskDetail(deps: HerdrApiDeps, target: string) {
     settledAt: record.settledAt,
     sessionPath: record.sessionPath,
     artifactDir: record.artifactDir,
+    summary: parsedResult?.meta.summary ?? "",
     result: cap(resultText),
     finalMessage: cap(finalMessage),
     diff: cap(readLocalPatch(deps.paths, record.taskId)),

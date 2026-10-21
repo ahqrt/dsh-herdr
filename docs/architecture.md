@@ -172,6 +172,8 @@ a second implementation. `live` reads a pane tail through
 read-only in the panel. The browser half is a hand-written client module
 (`lib/client.js`) that registers a `sidebarRightTabs` type plus the
 `sidebar.right.pane.tab` slot and renders the fleet, detail, and per-file diff.
+Search, the review packet, and cwd copy are client-side compositions of the same
+detail payload; the host gains no new read surface for them.
 
 ## Native subagent provider
 

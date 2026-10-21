@@ -51,11 +51,19 @@ has a place below, roughly in order of value.
 - **Diff hunk highlighting** and per-file/patch copy.
 - **Bulk selection** for interrupt/close with a single confirmation.
 
-## 0.9 — search and context
+## 0.9 — search and context (shipped in 0.9.0)
 
-- **Fleet search** by name, cwd, kind, and model.
-- **Copy the review packet** (summary + diff + result path) as Markdown.
-- **Open the task cwd** in the file sidebar.
+- **Fleet search** by name, cwd, kind, model, and task id.
+- **Copy the review packet** (metadata + summary + final message + diff +
+  `result.md`) as Markdown.
+- **Copy cwd** for opening the worktree elsewhere.
+
+## 0.10 — handoff
+
+- **Open cwd** in the file sidebar once the client exposes a path-targeted files
+  tab.
+- **Packet templates** (PR comment, issue, plain summary).
+- **Fleet grouping** by machine and status.
 
 ## 0.5 — hosts and polish (native provider shipped in 0.5.0)
 
