@@ -13,6 +13,12 @@
 
 `0.x` still means "the public surface may move before 1.0", but it moves with a changelog entry and a migration note, not silently.
 
+## 0.6.0 additions
+
+Additive: the `Herdr` right-sidebar panel and `/herdr/api` read-only endpoints.
+The client half requires the DSH web client (`sidebar-right` + slots); profiles
+without it keep the host tools and simply do not mount the panel.
+
 ## 0.5.0 additions
 
 Additive: `nativeSubagent`, `subagentName`, and a `herdr` DSH subagent provider.

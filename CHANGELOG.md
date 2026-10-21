@@ -6,6 +6,16 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+
+### Added
+
+- **Web panel**: a `Herdr` right-sidebar tab and guide entry showing the live
+  fleet plus a selected task's final message, `result.md`, and diff. Read-only.
+- `GET /herdr/api/health`, `/herdr/api/fleet`, `/herdr/api/task` (same-origin,
+  no-store) behind the existing DSH web server.
+- Client bundle (`lib/client.js`) and `dsh.client` metadata.
+
 ## [0.5.1] - 2026-10-21
 
 ### Changed

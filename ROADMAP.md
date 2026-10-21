@@ -38,13 +38,20 @@ has a place below, roughly in order of value.
 - **Doctor file-access mode**: `ssh`, `mounted`, or missing.
 - **Mount remains a fallback** via `sharedFilesystem`.
 
+## 0.6 — panel actions
+
+- **Panel actions**: interrupt and close from the fleet view, with the same
+  ownership gates as the tools.
+- **Diff navigation**: per-file folding and a raw/rendered toggle.
+- **Fleet filters**: owned/all and machine filter controls.
+
 ## 0.5 — hosts and polish (native provider shipped in 0.5.0)
 
 - **Native subagent provider**: a `herdr` provider registered with
   `ctx.subagents`; select it from a `dsh-tool-subagent` row for native cards and
   cancellation.
-- **Client UI panel** *(next)*: a fleet view and per-task diff viewer consuming
-  the same `AgentResult`.
+- **Client UI panel** *(shipped in 0.6.0)*: a right-sidebar fleet view with the
+  final message, `result.md`, and diff for the selected task.
 - **Remote Windows**: only if Herdr supports it and a POSIX shell is available.
 
 ## 1.0 — stable contract

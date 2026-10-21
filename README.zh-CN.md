@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.5.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.6.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
@@ -43,6 +43,7 @@ DSH 自带 subagent 跑在进程内，和主会话共用模型。有些场景你
 | **事件等待** | 可选 socket 传输，用 `agent.wait` 在服务端等；连接失败自动退回 CLI。 |
 | **远程机器** | spawn/list/result/message 支持 `machine`，走 `herdr --machine`；SSH 文件桥（`machineTargets`）不再需要本地挂载。 |
 | **原生 subagent** | 注册 `herdr` subagent provider，让 `dsh-tool-subagent` 的委派走 Herdr，获得原生卡片、catalog 和取消。 |
+| **Web 面板** | 右侧栏 `Herdr` 标签页：实时舰队、最终消息、`result.md` 和 diff。只读。 |
 | **可诊断** | `herdr_doctor` 一次检查 binary、server、kinds、别名表、目录、拓扑、pi。 |
 
 ---
@@ -79,11 +80,11 @@ flowchart LR
    pnpm install && pnpm build && pnpm pack
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.5.1.tgz`（开发期也可以用 `link:/path/to/checkout`）。
+2. 在 Plugins 页安装生成的 `dsh-herdr-0.6.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
-`dsh-herdr@0.5.1` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
+`dsh-herdr@0.6.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
 
 ### 装进 CLI profile
 
@@ -157,6 +158,15 @@ DSH:  → herdr_message_agent({ target: "worker-flash-a1b2", kind: "REVIEW_FINDI
 
 这个原生工具只返回子 agent 的最终文本；需要 diff、session、artifact 和
 blocked 问题时用 `herdr_spawn_agent`。
+
+### Web 面板
+
+插件会在右侧栏贡献一个 `Herdr` 标签页（也可以从侧栏 guide 打开）。它列出实时
+agent，选中自己派出的任务后显示最终消息、`result.md` 和 diff 补丁。面板是只读的。
+
+![Herdr 面板](https://raw.githubusercontent.com/ahqrt/dsh-herdr/main/docs/assets/herdr-panel.png)
+
+数据来自 `/herdr/api` 下的三个同源只读接口（`health`、`fleet`、`task`），不需要额外配置。
 
 ## 结果是怎么来的
 

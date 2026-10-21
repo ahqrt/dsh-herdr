@@ -30,6 +30,7 @@ import {
 import { LifecycleService } from "./services/lifecycle.js";
 import { DoctorService } from "./services/doctor.js";
 import { createTools, TOOL_NAMES } from "./tools/index.js";
+import { createHerdrApi } from "./server/herdr-api.js";
 import type { DefineTool, PluginContext } from "./host.js";
 
 export const name = "tool-herdr";
@@ -100,6 +101,31 @@ export function apply(ctx: PluginContext, rawConfig?: unknown): void {
   const inbox = new InboxService({ store, runtimes });
   const transcript = new TranscriptService(store, runtimes);
   const lifecycle = new LifecycleService({ transports, store, audit, worktree });
+  const herdrApi = createHerdrApi({ store, lifecycle, runtimes, transports, paths });
+  const registerApi = (subContext: {
+    webServer: { register(options: unknown): unknown };
+    effect?: (fn: () => unknown, label: string) => void;
+  }) => {
+    try {
+      const register = () =>
+        subContext.webServer.register({
+          kind: "prefix",
+          path: "/herdr/api",
+          handler: herdrApi,
+        });
+      if (typeof subContext.effect === "function") {
+        subContext.effect(register, "dsh-herdr: /herdr/api");
+      } else {
+        register();
+      }
+    } catch (error) {
+      ctx.logger?.warn(
+        `dsh-herdr web panel API not registered: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+  if (typeof ctx.inject === "function") ctx.inject(["webServer"], registerApi);
+
   const providerStatus: SubagentRegistrationStatus = {
     name: config.subagentName,
     registered: false,
