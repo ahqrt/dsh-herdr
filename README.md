@@ -80,7 +80,7 @@ The `desktop` profile is owned by the Electron app, so install it from **Plugins
 3. Confirm `dsh.profile.bundles` contains `dsh-herdr`.
 4. Start a new session; `herdr_*` tools should be listed.
 
-`dsh-herdr` is published to npm with each tagged release. If the npm version is not live yet, use the tarball or a checkout.
+`dsh-herdr@0.2.0` is [live on npm](https://www.npmjs.com/package/dsh-herdr); each tagged release publishes automatically through the release workflow.
 
 ### Into a CLI profile
 

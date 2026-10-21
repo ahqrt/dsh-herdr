@@ -80,7 +80,7 @@ flowchart LR
 3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
 4. 新建会话，工具列表里应出现 `herdr_*`。
 
-`dsh-herdr` 会随每个 tag 发布到 npm；如果 npm 版本还没上线，用 tarball 或 checkout。
+`dsh-herdr@0.2.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)；之后每个 tag 由 release workflow 自动发布。
 
 ### 装进 CLI profile
 

@@ -35,10 +35,20 @@ jobs:
       - name: Test
         run: pnpm test:only
 
-      - name: Publish to npm
+      - name: Check whether this version is already published
+        id: published
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "dsh-herdr@$VERSION" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "dsh-herdr@$VERSION is already on npm; skipping publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm (OIDC trusted publishing)
+        if: steps.published.outputs.exists == 'false'
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
