@@ -15,22 +15,26 @@
 
 The Electron app owns its profile; `dsh plugin --profile desktop …` is rejected by design.
 
-1. Build or fetch the package:
-   - tarball: `pnpm pack` → `dsh-herdr-0.11.0.tgz` (or the release asset)
-   - link: the absolute checkout path
-   - npm: `dsh-herdr@0.11.0` (published)
-2. Open **Plugins** in the app sidebar → install.
-3. Verify `package.json` in `~/.dsh/profiles/desktop/` lists `dsh-herdr` under `dependencies` **and** `dsh.profile.bundles`.
-4. The patch row appears in the composed profile:
+1. Open **Plugins → Add plugin** in the app.
+2. Enter one of:
+   - npm package: `dsh-herdr@0.11.1`
+   - local checkout directory (after `pnpm build`): `/absolute/path/to/dsh-herdr`
+   - GitHub URL: `https://github.com/ahqrt/dsh-herdr`
+3. Install. The plugin manager adds the dependency and the `dsh.profile.bundles` entry.
+4. Verify `~/.dsh/profiles/desktop/package.json` lists `dsh-herdr` under
+   `dependencies` and `dsh.profile.bundles`.
+5. The patch row appears in the composed profile:
 
    ```text
    - id: tool-herdr
      name: dsh-herdr
    ```
 
-5. Start a new session. `herdr_doctor` should be callable.
+6. Start a new session. `herdr_doctor` should be callable.
 
-HMR usually applies a new profile layer live. If the tools do not appear, restart the app; a stale module graph is the common cause.
+A local `.tgz` **path** is not a directory spec. Use the npm name, or a `.tgz`
+URL if the dialog accepts one. HMR usually applies a new profile layer live; if
+the tools or the Herdr tab do not appear, restart the app.
 
 ### Uninstall
 

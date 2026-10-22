@@ -6,6 +6,14 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-22
+
+### Fixed
+
+- Desktop install instructions: the app's plugin manager takes an npm package
+  name, GitHub URL, or local **directory**, not a local `.tgz` path. Documented
+  the exact Plugins → Add plugin flow and the tarball limitation.
+
 ## [0.11.0] - 2026-10-21
 
 ### Added

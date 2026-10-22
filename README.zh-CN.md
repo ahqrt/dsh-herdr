@@ -72,19 +72,23 @@ flowchart LR
 
 ### 装进 Desktop 应用
 
-`desktop` profile 由 Electron 独占，不能 `dsh plugin`，要走应用内 **Plugins** 页：
+`desktop` profile 由 Electron 独占，`dsh plugin --profile desktop …` 会被拒绝。
 
-1. 先打包（或下载 release 附件）：
+1. 打开应用内 **Plugins → Add plugin**。
+2. 直接填 npm 包名：
 
-   ```bash
-   pnpm install && pnpm build && pnpm pack
+   ```text
+   dsh-herdr@0.11.1
    ```
 
-2. 在 Plugins 页安装生成的 `dsh-herdr-0.11.0.tgz`（开发期也可以用 `link:/path/to/checkout`）。
-3. 确认 `dsh.profile.bundles` 里出现 `dsh-herdr`。
-4. 新建会话，工具列表里应出现 `herdr_*`。
+   本地开发可以填绝对**目录**（先 `pnpm build`）：
+   `/Users/apple/Desktop/deepseekharness-herdr`。GitHub 地址也可以，因为 `lib/` 已提交。
+3. 安装。插件管理器会自动加依赖和 `dsh.profile.bundles`。
+4. 新建会话，工具列表里应出现 `herdr_*`。如果 Herdr 面板或工具没出现，重启应用清掉旧模块图。
 
-`dsh-herdr@0.11.0` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
+本地 `.tgz` 路径不是目录 spec；优先用 npm 包名，或对话框支持时填 `.tgz` 直链。
+
+`dsh-herdr@0.11.1` 已[发布到 npm](https://www.npmjs.com/package/dsh-herdr)。配好仓库的 trusted publisher 后，每个 tag 由 release workflow 自动发布（见 [CONTRIBUTING](CONTRIBUTING.md#releases)）。
 
 ### 装进 CLI profile
 

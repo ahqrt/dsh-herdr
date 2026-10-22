@@ -73,6 +73,12 @@ the socket is the problem, and run `herdr status` for protocol drift.
 ## Symptom: a remote machine is refused
 
 - `machine "x" is not enabled` → add the label to `machines`.
+- `profile desktop is managed exclusively by the Electron application` → do not
+  use `dsh plugin` for the desktop app; use **Plugins → Add plugin** and enter
+  the npm package name (`dsh-herdr@0.11.1`) or the checkout directory.
+- `The path does not exist or is not a valid plugin package` → a `.tgz` file is
+  not a directory; enter the npm package name instead, or point at the built
+  checkout directory.
 - `has no file access configured` → add `machineTargets: ["label=user@host"]`
   for SSH, or `sharedFilesystem` if the paths are mounted.
 - SSH failures: `BatchMode=yes` means no password prompt. Check

@@ -72,19 +72,26 @@ The dependency rule is one-way: `tools → services → ports ← adapters`. The
 
 ### Into the Desktop app
 
-The `desktop` profile is owned by the Electron app, so install it from **Plugins** (not `dsh plugin`):
+The `desktop` profile is owned by the Electron app; `dsh plugin --profile desktop …` is rejected by design.
 
-1. Build the tarball (or download the release asset):
+1. Open **Plugins → Add plugin** in the app.
+2. Enter the npm package name:
 
-   ```bash
-   pnpm install && pnpm build && pnpm pack
+   ```text
+   dsh-herdr@0.11.1
    ```
 
-2. Install the resulting `dsh-herdr-0.11.0.tgz` (or a `link:/path/to/checkout` spec while developing).
-3. Confirm `dsh.profile.bundles` contains `dsh-herdr`.
-4. Start a new session; `herdr_*` tools should be listed.
+   For a local checkout, enter its absolute **directory** (run `pnpm build` first):
+   `/Users/apple/Desktop/deepseekharness-herdr`. A GitHub URL also works because
+   `lib/` is committed.
+3. Install. The plugin manager adds the dependency and the `dsh.profile.bundles` entry.
+4. Start a new session; `herdr_*` tools should be listed. If the Herdr panel or
+   tools do not appear, restart the app to clear the module graph.
 
-`dsh-herdr@0.11.0` is [live on npm](https://www.npmjs.com/package/dsh-herdr). Tagged releases publish through the release workflow once the repository trusted publisher is configured (see [CONTRIBUTING](CONTRIBUTING.md#releases)).
+A local `.tgz` path is not a directory spec; use the npm name, or a `.tgz` URL if
+the dialog offers one.
+
+`dsh-herdr@0.11.1` is [live on npm](https://www.npmjs.com/package/dsh-herdr). Tagged releases publish through the release workflow once the repository trusted publisher is configured (see [CONTRIBUTING](CONTRIBUTING.md#releases)).
 
 ### Into a CLI profile
 
