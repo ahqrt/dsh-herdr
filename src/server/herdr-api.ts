@@ -15,6 +15,7 @@ import type { TaskStore } from "../ports/store.js";
 import type { TransportPool } from "../ports/transports.js";
 import type { LifecycleService } from "../services/lifecycle.js";
 import type { RevealService } from "../services/reveal.js";
+import type { TranscriptService } from "../services/transcript.js";
 
 const MAX_TEXT = 300_000;
 const MAX_BODY = 32 * 1024;
@@ -25,6 +26,7 @@ export interface HerdrApiDeps {
   runtimes: MachineRuntimePool;
   transports: TransportPool;
   reveal: RevealService;
+  transcript: TranscriptService;
   paths: Paths;
 }
 
@@ -93,6 +95,21 @@ export function createHerdrApi(deps: HerdrApiDeps) {
             tail: cap(text),
           },
         });
+        return;
+      }
+      if (path === "/herdr/api/transcript") {
+        const target = url.searchParams.get("target");
+        if (!target) {
+          json(res, 400, { ok: false, error: "target is required" });
+          return;
+        }
+        const transcript = await deps.transcript.read({
+          target,
+          from: numberParam(url.searchParams.get("from")),
+          limit: numberParam(url.searchParams.get("limit")),
+          tail: url.searchParams.get("tail") === "1",
+        });
+        json(res, 200, { ok: true, transcript });
         return;
       }
       if (path === "/herdr/api/task") {
@@ -200,7 +217,7 @@ function sendError(res: ServerResponse, error: unknown): void {
       ? 403
       : code === "TASK_NOT_FOUND"
         ? 404
-        : code === "VALIDATION_ERROR"
+        : code === "VALIDATION_ERROR" || code === "NO_TRANSCRIPT"
           ? 409
           : code === "TIMEOUT"
             ? 504
@@ -210,6 +227,12 @@ function sendError(res: ServerResponse, error: unknown): void {
     error: error instanceof Error ? error.message : String(error),
     code,
   });
+}
+
+function numberParam(value: string | null): number | undefined {
+  if (value === null || value.trim() === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
 }
 
 async function taskDetail(deps: HerdrApiDeps, target: string) {
@@ -249,6 +272,7 @@ async function taskDetail(deps: HerdrApiDeps, target: string) {
     sessionPath: record.sessionPath,
     artifactDir: record.artifactDir,
     summary: parsedResult?.meta.summary ?? "",
+    error: record.error,
     result: cap(resultText),
     finalMessage: cap(finalMessage),
     diff: cap(readLocalPatch(deps.paths, record.taskId)),

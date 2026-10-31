@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pageTranscript, readTranscript } from "../lib/domain/transcript.js";
+import { pageTranscript, readTranscript, toolCallPreview } from "../lib/domain/transcript.js";
 
 const ENTRIES = [
   { type: "session", version: 3, id: "s1" },
@@ -18,7 +18,7 @@ const ENTRIES = [
       role: "assistant",
       content: [
         { type: "text", text: "working on it" },
-        { type: "toolCall", name: "bash" },
+        { type: "toolCall", name: "bash", arguments: { command: "npm test\n--watch" } },
       ],
     },
   },
@@ -41,7 +41,7 @@ test("readTranscript maps user/assistant turns and tool calls", () => {
     assert.equal(messages[0].text, "do it");
     assert.equal(messages[0].timestamp, "2026-01-01T00:00:00Z");
     assert.equal(messages[1].role, "assistant");
-    assert.deepEqual(messages[1].toolCalls, ["bash"]);
+    assert.deepEqual(messages[1].toolCalls, [{ name: "bash", detail: "npm test --watch" }]);
     assert.equal(messages[2].text, "done");
     assert.deepEqual(
       messages.map((message) => message.index),
@@ -84,4 +84,55 @@ test("a missing or torn session degrades gracefully", () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("tool results keep their tool name, error flag and duration", () => {
+  const dir = mkdtempSync(join(tmpdir(), "herdr-transcript-"));
+  try {
+    const path = join(dir, "session.jsonl");
+    const entries = [
+      { type: "message", message: { role: "user", content: "look at it" } },
+      {
+        type: "message",
+        message: {
+          role: "assistant",
+          content: [{ type: "toolCall", name: "read", arguments: { path: "/repo/a.ts" } }],
+        },
+      },
+      {
+        type: "message",
+        timestamp: "2026-01-01T00:00:03Z",
+        message: {
+          role: "toolResult",
+          toolName: "read",
+          isError: true,
+          durationMs: 1500,
+          content: [{ type: "text", text: "boom" }],
+        },
+      },
+    ];
+    writeFileSync(path, `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`, "utf8");
+    const messages = readTranscript(path);
+    assert.equal(messages.length, 3);
+    assert.deepEqual(messages[1].toolCalls, [{ name: "read", detail: "/repo/a.ts" }]);
+    assert.equal(messages[2].role, "tool");
+    assert.equal(messages[2].toolName, "read");
+    assert.equal(messages[2].isError, true);
+    assert.equal(messages[2].durationMs, 1500);
+    assert.equal(messages[2].text, "boom");
+    assert.equal(messages[2].timestamp, "2026-01-01T00:00:03Z");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("toolCallPreview prefers a readable argument and collapses newlines", () => {
+  assert.equal(toolCallPreview({ command: "a\n  b" }), "a b");
+  assert.equal(toolCallPreview({ path: "/tmp/x" }), "/tmp/x");
+  assert.equal(toolCallPreview({ pattern: "TODO" }), "TODO");
+  assert.equal(toolCallPreview({ weird: "value" }), "value");
+  assert.equal(toolCallPreview({ nested: { a: 1 } }), '{"nested":{"a":1}}');
+  assert.equal(toolCallPreview(undefined), "");
+  assert.equal(toolCallPreview({}), "");
+  assert.ok(toolCallPreview({ command: "x".repeat(400) }).length <= 220);
 });

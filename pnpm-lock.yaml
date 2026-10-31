@@ -167,7 +167,7 @@ importers:
   .:
     dependencies:
       '@deepseek-ai/dsh-tools':
-        specifier: 0.2.1-rc.2
+        specifier: '>=0.2.1-rc.2 <0.2.2-0'
         version: 0.2.1-rc.2(53871834bb50b7f532ec7289e680bbda)
       '@deepseek-ai/schemastery':
         specifier: ~3.18.5

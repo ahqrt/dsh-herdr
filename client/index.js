@@ -9,35 +9,85 @@ window.__ModuleLoader__.load({
   factory: (require) => {
     const React = require("react");
     const h = React.createElement;
-    const { useCallback, useEffect, useMemo, useState } = React;
+    const { useCallback, useEffect, useMemo, useRef, useState } = React;
+
+    // DSH theme tokens (--dsw-alias-*). Every value keeps a dark fallback so a
+    // missing host token never turns the panel into hardcoded grey.
+    const T = {
+      layer: "var(--dsw-alias-bg-layer-2, #232326)",
+      line: "var(--dsw-alias-border-l3, #303034)",
+      lineStrong: "var(--dsw-alias-border-l2, #3c3c41)",
+      text: "var(--dsw-alias-label-primary, #e9e9ec)",
+      mid: "var(--dsw-alias-label-secondary, #b2b2b8)",
+      mut: "var(--dsw-alias-label-tertiary, #85858c)",
+      accent: "var(--dsw-alias-link, #7ea6f0)",
+      hover: "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,.055))",
+      active: "var(--dsw-alias-interactive-bg-active, rgba(255,255,255,.09))",
+      ok: "var(--dsw-alias-state-success-primary, #62c07f)",
+      warn: "var(--dsw-alias-state-warn-primary, #d9a557)",
+      err: "var(--dsw-alias-state-error-primary, #e2707a)",
+      mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    };
 
     const styles = {
-      root: { display: "flex", flexDirection: "column", height: "100%", font: "12px/1.45 ui-sans-serif, system-ui, sans-serif", color: "var(--dsh-text, #d6d6d6)" },
-      bar: { display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderBottom: "1px solid var(--dsh-border, #333)", flexWrap: "wrap" },
-      title: { fontWeight: 600, fontSize: 12, letterSpacing: ".02em" },
-      muted: { opacity: 0.65 },
-      button: { background: "transparent", color: "inherit", border: "1px solid var(--dsh-border, #3a3a3a)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", font: "inherit" },
-      buttonOn: { borderColor: "var(--dsh-accent, #6f8fd9)", background: "var(--dsh-surface-2, #262626)" },
-      danger: { color: "#d96a6a" },
-      select: { background: "transparent", color: "inherit", border: "1px solid var(--dsh-border, #3a3a3a)", borderRadius: 4, padding: "2px 4px", font: "inherit", maxWidth: 120 },
-      input: { background: "transparent", color: "inherit", border: "1px solid var(--dsh-border, #3a3a3a)", borderRadius: 4, padding: "2px 6px", font: "inherit", minWidth: 90, flex: "0 1 170px" },
-      notice: { padding: "4px 10px", fontSize: 11, borderBottom: "1px solid var(--dsh-border, #333)" },
-      body: { display: "flex", flex: 1, minHeight: 0 },
-      list: { width: "45%", minWidth: 180, overflow: "auto", borderRight: "1px solid var(--dsh-border, #333)" },
-      detail: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column" },
-      row: { padding: "6px 10px", borderBottom: "1px solid var(--dsh-border, #2a2a2a)", cursor: "pointer", display: "flex", gap: 6, alignItems: "flex-start" },
-      rowActive: { background: "var(--dsh-surface-2, #262626)" },
-      badge: { display: "inline-block", marginLeft: 6, padding: "0 5px", borderRadius: 3, border: "1px solid currentColor", fontSize: 10, opacity: 0.8 },
-      pre: { margin: 0, padding: 10, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", font: "11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace", flex: 1 },
-      tabs: { display: "flex", gap: 4, padding: "6px 8px", borderBottom: "1px solid var(--dsh-border, #333)", alignItems: "center", flexWrap: "wrap" },
-      tab: { background: "transparent", color: "inherit", border: "1px solid transparent", borderRadius: 4, padding: "2px 8px", cursor: "pointer", font: "inherit", opacity: 0.75 },
-      tabActive: { borderColor: "var(--dsh-border, #3a3a3a)", background: "var(--dsh-surface-2, #262626)", opacity: 1 },
-      empty: { padding: 16, opacity: 0.6 },
-      file: { borderBottom: "1px solid var(--dsh-border, #2a2a2a)" },
-      fileHead: { padding: "4px 8px", cursor: "pointer", font: "11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace" },
+      root: { display: "flex", flexDirection: "column", height: "100%", minWidth: 0, font: "12px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif", color: T.text },
+      head: { display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px 8px", borderBottom: `1px solid ${T.line}` },
+      headRow: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 },
+      kicker: { fontSize: 10, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: T.mut },
+      count: { fontSize: 11, color: T.mut, fontVariantNumeric: "tabular-nums" },
+      muted: { color: T.mut },
+      search: { display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0, height: 28, padding: "0 8px", border: `1px solid ${T.line}`, borderRadius: 7, color: T.mut },
+      input: { flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", color: T.text, font: "inherit", fontSize: 12 },
+      chip: { display: "inline-flex", alignItems: "center", gap: 4, height: 24, padding: "0 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "transparent", color: T.mid, font: "inherit", fontSize: 11.5, cursor: "pointer", whiteSpace: "nowrap" },
+      button: { display: "inline-flex", alignItems: "center", gap: 4, height: 24, padding: "0 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "transparent", color: T.mid, font: "inherit", fontSize: 11.5, cursor: "pointer", whiteSpace: "nowrap" },
+      buttonOn: { borderColor: T.accent, color: T.text, background: T.active },
+      danger: { color: T.err },
+      iconBtn: { display: "grid", placeItems: "center", width: 24, height: 24, padding: 0, border: "none", borderRadius: 6, background: "transparent", color: T.mut, cursor: "pointer", flex: "none" },
+      select: { height: 24, maxWidth: 120, padding: "0 4px", border: `1px solid ${T.line}`, borderRadius: 6, background: "transparent", color: T.mid, font: "inherit", fontSize: 11.5 },
+      notice: { padding: "6px 12px", fontSize: 11, borderBottom: `1px solid ${T.line}` },
+      body: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
+      bodyWide: { flex: 1, minHeight: 0, display: "flex", flexDirection: "row" },
+      list: { flex: 1, minHeight: 0, overflow: "auto" },
+      listWide: { width: 260, flex: "none", minHeight: 0, overflow: "auto", borderRight: `1px solid ${T.line}` },
+      detail: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
+      row: { display: "flex", alignItems: "flex-start", gap: 9, padding: "9px 12px", cursor: "pointer", borderBottom: `1px solid ${T.line}`, minWidth: 0 },
+      rowActive: { background: T.active, boxShadow: `inset 2px 0 0 ${T.accent}` },
+      dot: { width: 7, height: 7, borderRadius: 999, flex: "none", marginTop: 5 },
+      rowMain: { flex: 1, minWidth: 0 },
+      rowTop: { display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 },
+      rowName: { flex: "1 1 auto", minWidth: 0, fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+      rowMeta: { marginTop: 2, fontSize: 11, color: T.mut, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+      rowState: { marginLeft: "auto", flex: "none", fontSize: 10.5, fontWeight: 550, whiteSpace: "nowrap" },
+      badge: { display: "inline-block", marginLeft: 6, padding: "0 5px", borderRadius: 999, border: "1px solid currentColor", fontSize: 10, opacity: 0.85 },
+      emptyWrap: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "24px 28px", textAlign: "center" },
+      emptyIcon: { color: T.mut, opacity: 0.6 },
+      emptyTitle: { fontSize: 12.5, fontWeight: 600, color: T.mid },
+      emptyBody: { fontSize: 11.5, lineHeight: 1.7, color: T.mut, maxWidth: 260 },
+      empty: { padding: 16, color: T.mut },
+      detailHead: { padding: "8px 8px 0 12px", display: "flex", flexDirection: "column", gap: 4 },
+      detailTop: { display: "flex", alignItems: "center", gap: 4, minWidth: 0 },
+      detailName: { fontSize: 12.5, fontWeight: 650, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 },
+      detailMeta: { fontSize: 11, color: T.mut, paddingLeft: 28, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+      tabs: { display: "flex", alignItems: "center", gap: 14, padding: "10px 12px 0", borderBottom: `1px solid ${T.line}`, minWidth: 0 },
+      tab: { background: "transparent", border: "none", padding: "0 0 8px", color: T.mut, font: "inherit", fontSize: 12, cursor: "pointer" },
+      tabActive: { color: T.text, boxShadow: `inset 0 -2px 0 ${T.accent}` },
+      pre: { margin: 0, padding: 12, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", font: `11.5px/1.6 ${T.mono}`, flex: 1, minHeight: 0 },
+      file: { borderBottom: `1px solid ${T.line}` },
+      fileHead: { padding: "4px 8px", cursor: "pointer", font: `11px/1.5 ${T.mono}` },
       diffLine: { display: "block", whiteSpace: "pre-wrap", wordBreak: "break-word" },
-      checkbox: { marginTop: 3, accentColor: "var(--dsh-accent, #6f8fd9)" },
-      groupHead: { padding: "4px 10px", fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em", opacity: 0.6, borderBottom: "1px solid var(--dsh-border, #2a2a2a)" },
+      paneBar: { display: "flex", alignItems: "center", gap: 6, padding: "4px 8px 4px 12px", borderBottom: `1px solid ${T.line}`, minWidth: 0 },
+      paneLabel: { fontSize: 11, color: T.mut, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+      link: { background: "transparent", border: "none", padding: 0, color: T.accent, font: "inherit", fontSize: 11.5, cursor: "pointer" },
+      flowList: { flex: 1, minHeight: 0, overflow: "auto" },
+      flowItem: { padding: "6px 12px", borderBottom: `1px solid ${T.line}`, display: "flex", flexDirection: "column", gap: 2 },
+      flowHead: { display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" },
+      flowText: { margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", font: `11px/1.55 ${T.mono}` },
+      flowCall: { display: "flex", gap: 5, font: `11px/1.5 ${T.mono}`, color: T.accent },
+      menuWrap: { position: "relative", marginLeft: "auto", flex: "none" },
+      menu: { position: "absolute", right: 0, top: 28, zIndex: 30, minWidth: 196, padding: 4, border: `1px solid ${T.lineStrong}`, borderRadius: 8, background: T.layer, boxShadow: "0 8px 24px rgba(0,0,0,.35)" },
+      menuHead: { padding: "4px 8px 2px", fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", color: T.mut },
+      menuItem: { display: "block", width: "100%", padding: "5px 8px", border: "none", borderRadius: 5, background: "transparent", color: T.text, font: "inherit", fontSize: 11.5, textAlign: "left", cursor: "pointer" },
+      divider: { height: 1, margin: "4px 2px", background: T.line },
     };
 
     async function getJson(url) {
@@ -65,6 +115,79 @@ window.__ModuleLoader__.load({
       } catch {
         return false;
       }
+    }
+
+    /** Turns per transcript request; the server clamps to 100. */
+    const FLOW_PAGE = 100;
+
+    function shortClock(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    function roleColor(role) {
+      if (role === "user") return T.warn;
+      if (role === "tool") return T.ok;
+      if (role === "system") return T.mut;
+      return T.accent;
+    }
+
+    function callLabel(call) {
+      return call?.detail ? `${call.name} ${call.detail}` : String(call?.name ?? "tool");
+    }
+
+    /**
+     * Merge a transcript page into the turns the panel already shows.
+     *
+     * `earlier` prepends a page the user asked for; `tail` refreshes the last
+     * page and keeps everything already loaded above it so paging backwards
+     * does not get thrown away by the follow timer.
+     */
+    function mergeFlow(previous, page, mode) {
+      const incoming = page?.messages ?? [];
+      if (mode === "replace" || !previous) return { ...page, messages: incoming };
+      if (mode === "earlier") {
+        const seen = new Set(incoming.map((message) => message.index));
+        const merged = [
+          ...incoming,
+          ...previous.messages.filter((message) => !seen.has(message.index)),
+        ];
+        return {
+          ...previous,
+          prevFrom: page.prevFrom,
+          total: page.total,
+          messages: merged.sort((left, right) => left.index - right.index),
+        };
+      }
+      const start = incoming[0]?.index ?? previous.total;
+      const earlier = previous.messages.filter((message) => message.index < start);
+      const merged = [...earlier, ...incoming];
+      return {
+        ...page,
+        prevFrom: earlier.length > 0 ? previous.prevFrom : page.prevFrom,
+        messages: merged.sort((left, right) => left.index - right.index),
+      };
+    }
+
+    /** Plain-text transcript, for pasting into a review. */
+    function formatFlowText(flow) {
+      const lines = [`# Transcript · ${flow.taskId || "task"} · ${flow.total ?? 0} turn(s)`];
+      if (flow.sessionPath) lines.push(`session: ${flow.sessionPath}`);
+      for (const message of flow.messages ?? []) {
+        const flags = [
+          message.isError ? "error" : "",
+          typeof message.durationMs === "number" ? `${(message.durationMs / 1000).toFixed(1)}s` : "",
+        ].filter(Boolean);
+        const label = message.role === "tool" && message.toolName
+          ? `tool:${message.toolName}`
+          : message.role;
+        const head = `## [${message.index}] ${label}${flags.length > 0 ? ` (${flags.join(" ")})` : ""}`;
+        lines.push("", head, message.text || "");
+        for (const call of message.toolCalls ?? []) lines.push(`- → ${callLabel(call)}`);
+      }
+      return lines.join("\n");
     }
 
     /** Build a review packet; `template` picks the destination shape. */
@@ -137,10 +260,69 @@ window.__ModuleLoader__.load({
     }
 
     function statusColor(status) {
-      if (status === "completed" || status === "idle") return "#6fbf73";
-      if (status === "blocked") return "#d9a441";
-      if (status === "failed" || status === "gone") return "#d96a6a";
-      return "#7aa7d9";
+      if (status === "starting" || status === "working" || status === "running") return T.accent;
+      if (status === "blocked") return T.warn;
+      if (status === "failed" || status === "gone") return T.err;
+      if (status === "completed" || status === "done") return T.ok;
+      return T.mut;
+    }
+
+    function relativeAge(ms) {
+      if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return "";
+      if (ms < 60_000) return "just now";
+      const minutes = Math.round(ms / 60_000);
+      if (minutes < 60) return `${minutes}m`;
+      const hours = Math.round(minutes / 60);
+      if (hours < 24) return `${hours}h`;
+      return `${Math.round(hours / 24)}d`;
+    }
+
+    /** Keep the two trailing path segments; enough to tell repos apart. */
+    function shortCwd(value) {
+      if (!value) return "";
+      const parts = String(value).split("/").filter(Boolean);
+      return parts.slice(-2).join("/");
+    }
+
+    function IconSearch() {
+      return h("svg", { width: 13, height: 13, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+        h("circle", { cx: 7, cy: 7, r: 4.3, stroke: "currentColor", strokeWidth: 1.4 }),
+        h("path", { d: "M10.2 10.2 13.4 13.4", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" }),
+      );
+    }
+
+    function IconRefresh() {
+      return h("svg", { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+        h("path", { d: "M13 8a5 5 0 1 1-1.6-3.7M13 2.8V5.4h-2.6", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round" }),
+      );
+    }
+
+    function IconCopy() {
+      return h("svg", { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+        h("rect", { x: 5.5, y: 5.5, width: 8, height: 8, rx: 2, stroke: "currentColor", strokeWidth: 1.3 }),
+        h("path", { d: "M10.5 5.5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4.5a2 2 0 0 0 2 2h1.5", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round" }),
+      );
+    }
+
+    function IconBack() {
+      return h("svg", { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+        h("path", { d: "M9.8 3.6 5.4 8l4.4 4.4", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }),
+      );
+    }
+
+    function IconDots() {
+      return h("svg", { width: 14, height: 14, viewBox: "0 0 16 16", fill: "currentColor", "aria-hidden": true },
+        h("circle", { cx: 3.4, cy: 8, r: 1.15 }),
+        h("circle", { cx: 8, cy: 8, r: 1.15 }),
+        h("circle", { cx: 12.6, cy: 8, r: 1.15 }),
+      );
+    }
+
+    function IconFleet() {
+      return h("svg", { width: 30, height: 30, viewBox: "0 0 32 32", fill: "none", "aria-hidden": true },
+        h("rect", { x: 3.5, y: 5.5, width: 25, height: 21, rx: 4.5, stroke: "currentColor", strokeWidth: 1.6 }),
+        h("path", { d: "M9 12.5 12.6 16 9 19.5M15.5 19.5h7", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" }),
+      );
     }
 
     /** Split a unified diff into per-file sections. */
@@ -171,13 +353,29 @@ window.__ModuleLoader__.load({
       const copy = (value, what) => {
         void copyText(value).then((ok) => onNotice(ok ? `copied ${what}` : "copy failed"));
       };
-      if (!text) return h("div", { style: styles.empty }, "(no diff)");
+      if (!text) {
+        return h("div", { style: styles.emptyWrap },
+          h("span", { style: styles.emptyIcon }, h(IconFleet)),
+          h("div", { style: styles.emptyTitle }, "No diff captured"),
+          h("div", { style: styles.emptyBody },
+            "The task ran outside a git repo, changed no tracked files, or never settled — "
+            + "the plugin writes the patch when a task settles."),
+        );
+      }
       return h("div", { style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 } },
-        h("div", { style: { ...styles.tabs, padding: "4px 8px" } },
-          h("span", { style: styles.muted }, `${files.length} file(s)`),
+        h("div", { style: styles.paneBar },
+          h("span", { style: styles.paneLabel }, `${files.length} file(s)`),
           h("span", { style: { flex: 1 } }),
-          h("button", { style: styles.button, onClick: () => copy(text, "patch") }, "copy patch"),
-          h("button", { style: { ...styles.button, ...(raw ? styles.buttonOn : {}) }, onClick: () => setRaw(!raw) }, raw ? "structured" : "raw"),
+          h("button", {
+            style: styles.iconBtn,
+            onClick: () => copy(text, "patch"),
+            title: "Copy patch",
+            "aria-label": "Copy patch",
+          }, h(IconCopy)),
+          h("button", {
+            style: { ...styles.chip, ...(raw ? { borderColor: T.accent, color: T.text } : {}) },
+            onClick: () => setRaw(!raw),
+          }, raw ? "Structured" : "Raw"),
         ),
         raw
           ? h("pre", { style: styles.pre }, text)
@@ -186,8 +384,8 @@ window.__ModuleLoader__.load({
                 h("details", { key: `${file.path}-${index}`, style: styles.file, open: index < 3 },
                   h("summary", { style: styles.fileHead },
                     file.path,
-                    h("span", { style: { color: "#6fbf73", marginLeft: 6 } }, `+${file.adds}`),
-                    h("span", { style: { color: "#d96a6a", marginLeft: 4 } }, `-${file.dels}`),
+                    h("span", { style: { color: T.ok, marginLeft: 6 } }, `+${file.adds}`),
+                    h("span", { style: { color: T.err, marginLeft: 4 } }, `-${file.dels}`),
                     h("span", {
                       style: { marginLeft: 8, opacity: 0.65, cursor: "pointer" },
                       onClick: (event) => {
@@ -204,13 +402,13 @@ window.__ModuleLoader__.load({
                         style: {
                           ...styles.diffLine,
                           color: line.startsWith("@@")
-                            ? "#8fb4e8"
+                            ? T.accent
                             : line.startsWith("+") && !line.startsWith("+++")
-                              ? "#8fcf95"
+                              ? T.ok
                               : line.startsWith("-") && !line.startsWith("---")
-                                ? "#e09a9a"
+                                ? T.err
                                 : line.startsWith("---") || line.startsWith("+++")
-                                  ? "#999"
+                                  ? T.mut
                                   : undefined,
                         },
                       }, line || " "),
@@ -218,6 +416,104 @@ window.__ModuleLoader__.load({
                   ),
                 ),
               ),
+            ),
+      );
+    }
+
+    /** One transcript turn: role, text, and the tool calls it made. */
+    function FlowMessage({ message }) {
+      const isTool = message.role === "tool";
+      const [open, setOpen] = useState(!isTool);
+      const body = message.text || "";
+      const limit = isTool ? 400 : 1200;
+      const long = body.length > limit;
+      const shown = open || !long ? body : `${body.slice(0, limit)}\n…`;
+      return h("div", { style: { ...styles.flowItem, borderLeft: `2px solid ${roleColor(message.role)}` } },
+        h("div", { style: styles.flowHead },
+          h("span", { style: { ...styles.badge, color: roleColor(message.role) } },
+            isTool && message.toolName ? message.toolName : message.role),
+          message.isError ? h("span", { style: { ...styles.badge, color: T.err } }, "error") : null,
+          typeof message.durationMs === "number"
+            ? h("span", { style: styles.muted }, `${(message.durationMs / 1000).toFixed(1)}s`)
+            : null,
+          h("span", { style: { flex: 1 } }),
+          message.timestamp ? h("span", { style: styles.muted }, shortClock(message.timestamp)) : null,
+          h("span", { style: styles.muted }, `#${message.index}`),
+        ),
+        body
+          ? h("pre", { style: styles.flowText }, shown)
+          : h("div", { style: styles.muted }, "(no output)"),
+        long
+          ? h("button", {
+              style: { ...styles.button, padding: "0 6px", alignSelf: "flex-start", fontSize: 10 },
+              onClick: () => setOpen(!open),
+            }, open ? "collapse" : `show all ${body.length} chars`)
+          : null,
+        (message.toolCalls ?? []).length > 0
+          ? h("div", { style: { display: "flex", flexDirection: "column", gap: 1, marginTop: 2 } },
+              message.toolCalls.map((call, index) =>
+                h("div", { key: index, style: styles.flowCall },
+                  h("span", { style: { flex: "0 0 auto" } }, `→ ${call.name}`),
+                  call.detail ? h("span", { style: { opacity: 0.72, wordBreak: "break-word" } }, call.detail) : null,
+                ),
+              ),
+            )
+          : null,
+      );
+    }
+
+    /**
+     * The run flow: the pi session's turns, newest-page-first loading and a
+     * follow timer while the child is still working.
+     */
+    function FlowView({ flow, loading, error, onRefresh, onEarlier, onCopy }) {
+      const scroll = useRef(null);
+      const lastIndex = flow?.messages?.[flow.messages.length - 1]?.index ?? -1;
+      const previousLast = useRef(-1);
+
+      useEffect(() => {
+        const node = scroll.current;
+        if (!node) return;
+        if (lastIndex > previousLast.current && previousLast.current >= 0) {
+          node.scrollTop = node.scrollHeight;
+        }
+        previousLast.current = lastIndex;
+      }, [lastIndex]);
+
+      if (error) return h("div", { style: { ...styles.empty, color: T.err } }, error);
+      if (!flow) return h("div", { style: styles.empty }, loading ? "reading transcript…" : "no transcript loaded");
+
+      const first = flow.messages[0]?.index ?? 0;
+      const last = flow.messages[flow.messages.length - 1]?.index ?? first;
+      const empty = flow.messages.length === 0;
+      return h("div", { style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 } },
+        h("div", { style: styles.paneBar },
+          h("span", { style: styles.paneLabel },
+            empty ? `${flow.total} turns` : `${flow.total} turns · #${first}–#${last}`),
+          h("span", { style: { flex: 1 } }),
+          h("button", {
+            style: styles.iconBtn,
+            onClick: () => onRefresh(),
+            disabled: loading,
+            title: "Reload transcript",
+            "aria-label": "Reload transcript",
+          }, h(IconRefresh)),
+          h("button", {
+            style: styles.iconBtn,
+            onClick: () => onCopy(),
+            title: "Copy transcript",
+            "aria-label": "Copy transcript",
+          }, h(IconCopy)),
+        ),
+        empty
+          ? h("div", { style: styles.empty }, "This session has no readable turns yet.")
+          : h("div", { style: styles.flowList, ref: scroll },
+              flow.prevFrom !== undefined
+                ? h("div", { style: { padding: "6px 12px" } },
+                    h("button", { style: styles.link, onClick: () => onEarlier(), disabled: loading }, "Load earlier turns"),
+                  )
+                : null,
+              flow.messages.map((message) => h(FlowMessage, { key: message.index, message })),
             ),
       );
     }
@@ -232,13 +528,42 @@ window.__ModuleLoader__.load({
       const [loadingSelected, setLoadingSelected] = useState(false);
       const [tab, setTab] = useState("final");
       const [loading, setLoading] = useState(false);
-      const [ownedOnly, setOwnedOnly] = useState(false);
       const [machine, setMachine] = useState("all");
       const [query, setQuery] = useState("");
       const [template, setTemplate] = useState("pr");
-      const [grouped, setGrouped] = useState(false);
       const [history, setHistory] = useState([]);
-      const [checked, setChecked] = useState({});
+      const [flow, setFlow] = useState(null);
+      const [flowLoading, setFlowLoading] = useState(false);
+      const [flowError, setFlowError] = useState("");
+      const flowRef = useRef(null);
+      const rootRef = useRef(null);
+      const menuRef = useRef(null);
+      const [wide, setWide] = useState(false);
+      const [menuOpen, setMenuOpen] = useState(false);
+
+      useEffect(() => { flowRef.current = flow; }, [flow]);
+
+      // Narrow sidebar: one pane at a time (fleet ⇄ detail). Wide panel: split.
+      useEffect(() => {
+        const node = rootRef.current;
+        if (!node || typeof ResizeObserver === "undefined") return undefined;
+        const observer = new ResizeObserver((entries) => {
+          setWide((entries[0]?.contentRect?.width ?? 0) >= 680);
+        });
+        observer.observe(node);
+        return () => observer.disconnect();
+      }, []);
+
+      useEffect(() => { setMenuOpen(false); }, [selected]);
+
+      useEffect(() => {
+        if (!menuOpen) return undefined;
+        const close = (event) => {
+          if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false);
+        };
+        document.addEventListener("mousedown", close);
+        return () => document.removeEventListener("mousedown", close);
+      }, [menuOpen]);
 
       const refresh = useCallback(async () => {
         setLoading(true);
@@ -283,38 +608,73 @@ window.__ModuleLoader__.load({
 
       useEffect(() => { void loadSelected(selected); }, [selected, loadSelected]);
 
+      // The flow belongs to one task; switching rows drops the old transcript.
+      useEffect(() => { setFlow(null); setFlowError(""); }, [detail?.taskId]);
+
+      const loadFlow = useCallback(async (target, mode = "tail") => {
+        if (!target) return;
+        const current = flowRef.current;
+        if (mode === "earlier" && current?.prevFrom === undefined) return;
+        const params = new URLSearchParams({ target, limit: String(FLOW_PAGE) });
+        if (mode === "earlier") params.set("from", String(current.prevFrom));
+        else params.set("tail", "1");
+        setFlowLoading(true);
+        setFlowError("");
+        try {
+          const body = await getJson(`/herdr/api/transcript?${params.toString()}`);
+          setFlow((previous) => mergeFlow(
+            previous,
+            body.transcript,
+            mode === "earlier" ? "earlier" : previous ? "tail" : "replace",
+          ));
+        } catch (e) {
+          setFlowError(String(e.message || e));
+        } finally {
+          setFlowLoading(false);
+        }
+      }, []);
+
+      useEffect(() => {
+        if (tab !== "flow" || !detail?.taskId) return;
+        if (flowRef.current?.taskId === detail.taskId) return;
+        void loadFlow(detail.taskId, "tail");
+      }, [tab, detail?.taskId, loadFlow]);
+
+      const detailStatus = useMemo(() => {
+        const row = fleet.find((entry) => entry.taskId && entry.taskId === detail?.taskId);
+        return row?.status || detail?.status;
+      }, [fleet, detail?.taskId, detail?.status]);
+
+      // Follow a running child: refresh the last page, keep earlier pages.
+      useEffect(() => {
+        if (tab !== "flow" || !detail?.taskId) return;
+        if (!["starting", "working", "running", "blocked"].includes(detailStatus)) return;
+        const timer = setInterval(() => void loadFlow(detail.taskId, "tail"), 4000);
+        return () => clearInterval(timer);
+      }, [tab, detail?.taskId, detailStatus, loadFlow]);
+
+      const copyPane = useCallback(async (label, text) => {
+        if (!text) { setNotice("nothing to copy"); return; }
+        const ok = await copyText(text);
+        setNotice(ok ? `copied ${label}` : "copy failed");
+      }, []);
+
+      const copyFlow = useCallback(async () => {
+        const current = flowRef.current;
+        if (!current) { setNotice("nothing to copy"); return; }
+        const ok = await copyText(formatFlowText(current));
+        setNotice(ok ? "copied flow" : "copy failed");
+      }, []);
+
       const machines = useMemo(() => [...new Set(fleet.map((row) => row.machine).filter(Boolean))], [fleet]);
       const rows = useMemo(() => fleet
-        .filter((row) => !ownedOnly || row.owned)
         .filter((row) => machine === "all" || row.machine === machine)
         .filter((row) => {
           const needle = query.trim().toLowerCase();
           if (!needle) return true;
           return [row.name, row.cwd, row.kind, row.model, row.taskId]
             .some((value) => String(value ?? "").toLowerCase().includes(needle));
-        }), [fleet, ownedOnly, machine, query]);
-
-      const groups = useMemo(() => {
-        if (!grouped) return null;
-        const map = new Map();
-        for (const row of rows) {
-          const key = `${row.machine || "local"} · ${row.status || "?"}`;
-          if (!map.has(key)) map.set(key, []);
-          map.get(key).push(row);
-        }
-        return [...map.entries()].map(([key, items]) => ({ key, items }));
-      }, [rows, grouped]);
-
-      const checkedIds = useMemo(
-        () => Object.keys(checked).filter((id) => fleet.some((row) => row.owned && row.taskId === id)),
-        [checked, fleet],
-      );
-
-      const toggle = (id) => setChecked((current) => {
-        const next = { ...current };
-        if (next[id]) delete next[id]; else next[id] = true;
-        return next;
-      });
+        }), [fleet, machine, query]);
 
       const copyDetail = useCallback(async (what) => {
         if (!detail) return;
@@ -330,6 +690,21 @@ window.__ModuleLoader__.load({
         setNotice(ok ? `copied ${what}` : "copy failed");
       }, [detail, template]);
 
+      const copyPacket = useCallback(async (nextTemplate) => {
+        if (!detail) return;
+        const value = buildPacket(detail, nextTemplate);
+        const ok = await copyText(value);
+        if (ok) {
+          setTemplate(nextTemplate);
+          setHistory((current) => [
+            { template: nextTemplate, text: value, at: new Date().toLocaleTimeString() },
+            ...current,
+          ].slice(0, 4));
+        }
+        setNotice(ok ? `copied ${nextTemplate} packet` : "copy failed");
+        setMenuOpen(false);
+      }, [detail]);
+
       const act = useCallback(async (action, payload) => {
         setNotice("");
         setError("");
@@ -343,194 +718,326 @@ window.__ModuleLoader__.load({
         }
       }, [refresh]);
 
-      const bulk = useCallback(async (action) => {
-        if (checkedIds.length === 0) return;
-        if (action === "close" && !window.confirm(`Close ${checkedIds.length} task(s)? Their session files are retained.`)) return;
-        setError("");
-        const failures = [];
-        for (const target of checkedIds) {
-          try {
-            await postAction(action, { target, ...(action === "close" ? { force: true } : {}) });
-          } catch (e) {
-            failures.push(`${target}: ${e.message || e}`);
-          }
-        }
-        setChecked({});
-        setNotice(failures.length === 0
-          ? `${action} ok for ${checkedIds.length} task(s)`
-          : `${checkedIds.length - failures.length} ok, ${failures.length} failed: ${failures.join("; ")}`);
-        await refresh();
-        if (action === "close") { setSelected(null); setDetail(null); }
-      }, [checkedIds, refresh]);
-
       const renderRow = (row) => {
         const active = selected && (selected.taskId || selected.paneId) === (row.taskId || row.paneId);
+        const meta = [row.kind, row.model, shortCwd(row.cwd), relativeAge(row.ageMs)].filter(Boolean).join(" · ");
         return h("div", {
           key: `${row.taskId || row.paneId || row.name}-${row.kind}`,
           "data-herdr-row": "1",
           tabIndex: 0,
           style: { ...styles.row, ...(active ? styles.rowActive : {}) },
-          onClick: () => { setSelected(row); setTab("final"); },
+          onClick: () => { setMenuOpen(false); setSelected(row); setTab(row.status === "failed" ? "flow" : "final"); },
+          onMouseEnter: (event) => { if (!active) event.currentTarget.style.background = T.hover; },
+          onMouseLeave: (event) => { if (!active) event.currentTarget.style.background = "transparent"; },
           onKeyDown: (event) => {
             if (event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault();
-              const rows = [...document.querySelectorAll("[data-herdr-row]")];
-              const index = rows.indexOf(event.currentTarget);
-              rows[index + (event.key === "ArrowDown" ? 1 : -1)]?.focus();
+              const rowEls = [...document.querySelectorAll("[data-herdr-row]")];
+              const index = rowEls.indexOf(event.currentTarget);
+              rowEls[index + (event.key === "ArrowDown" ? 1 : -1)]?.focus();
             } else if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
               event.currentTarget.click();
             }
           },
-          onFocus: (event) => { event.currentTarget.style.outline = "1px solid var(--dsh-accent, #6f8fd9)"; },
+          onFocus: (event) => { event.currentTarget.style.outline = `1px solid ${T.accent}`; },
           onBlur: (event) => { event.currentTarget.style.outline = "none"; },
         },
-          row.owned && row.taskId
-            ? h("input", {
-                type: "checkbox",
-                style: styles.checkbox,
-                checked: Boolean(checked[row.taskId]),
-                onClick: (event) => event.stopPropagation(),
-                onChange: () => toggle(row.taskId),
-              })
-            : h("span", { style: { width: 13 } }),
-          h("div", { style: { flex: 1, minWidth: 0 } },
-            h("div", null,
-              h("span", { style: styles.muted }, row.owned ? "* " : "  "),
-              h("strong", null, row.name || row.paneId || "?"),
-              h("span", { style: { ...styles.badge, color: statusColor(row.status) } }, row.status || "?"),
+          h("span", { style: { ...styles.dot, background: statusColor(row.status) } }),
+          h("div", { style: styles.rowMain },
+            h("div", { style: styles.rowTop },
+              h("span", { style: styles.rowName }, row.name || row.paneId || "?"),
+              h("span", { style: { ...styles.rowState, color: statusColor(row.status) } }, row.status || "?"),
             ),
-            h("div", { style: { ...styles.muted, marginTop: 2 } },
-              [row.kind, row.model, row.machine].filter(Boolean).join(" · "),
-            ),
+            meta ? h("div", { style: styles.rowMeta }, meta) : null,
           ),
         );
       };
 
-      const listContent = grouped && groups
-        ? groups.map((group) => h(React.Fragment, { key: group.key },
-            h("div", { style: styles.groupHead }, `${group.key} (${group.items.length})`),
-            group.items.map(renderRow),
-          ))
-        : rows.map(renderRow);
+      const listContent = rows.map(renderRow);
 
+      const searching = query.trim().length > 0;
+      const emptyList = h("div", { style: styles.emptyWrap },
+        h("span", { style: styles.emptyIcon }, h(IconFleet)),
+        h("div", { style: styles.emptyTitle }, searching ? "No matches" : "No agents yet"),
+        h("div", { style: styles.emptyBody },
+          searching
+            ? "Clear the search to see every agent."
+            : "Tasks you start from chat show up here, and stay until you close them."),
+        h("button", {
+          style: styles.chip,
+          onClick: searching ? () => setQuery("") : () => void refresh(),
+          disabled: loading && !searching,
+        }, searching ? "Clear search" : loading ? "Refreshing…" : "Refresh"),
+      );
 
-      return h("div", { style: styles.root },
-        h("div", { style: styles.bar },
-          h("span", { style: styles.title }, "Herdr"),
-          h("span", { style: styles.muted }, `${rows.length}/${fleet.length}`),
-          h("input", {
-            style: styles.input,
-            value: query,
-            placeholder: "search name/cwd/kind/model",
-            onChange: (event) => setQuery(event.target.value),
-          }),
-          h("span", { style: { flex: 1 } }),
-          h("button", { style: { ...styles.button, ...(ownedOnly ? styles.buttonOn : {}) }, onClick: () => setOwnedOnly(!ownedOnly) }, "owned"),
-          h("button", { style: { ...styles.button, ...(grouped ? styles.buttonOn : {}) }, onClick: () => setGrouped(!grouped) }, "group"),
-          machines.length > 0
-            ? h("select", { style: styles.select, value: machine, onChange: (e) => setMachine(e.target.value) },
-                h("option", { value: "all" }, "all machines"),
-                machines.map((name) => h("option", { key: name, value: name }, name)),
-              )
-            : null,
-          h("button", { style: styles.button, onClick: () => void refresh(), disabled: loading }, loading ? "…" : "refresh"),
+      const menuBody = detail
+        ? h(React.Fragment, null,
+            h("div", { style: styles.menuHead }, "Copy packet"),
+            ["pr", "issue", "summary"].map((name) =>
+              h("button", {
+                key: name,
+                style: styles.menuItem,
+                onClick: () => void copyPacket(name),
+              }, `${name.toUpperCase()} · markdown`),
+            ),
+            history.length > 0 ? h("div", { style: styles.divider }) : null,
+            history.map((item, index) =>
+              h("button", {
+                key: `h${index}`,
+                style: styles.menuItem,
+                onClick: async () => {
+                  const ok = await copyText(item.text);
+                  setNotice(ok ? `copied ${item.template}` : "copy failed");
+                  setMenuOpen(false);
+                },
+              }, `History · ${item.template} · ${item.at}`),
+            ),
+            h("div", { style: styles.divider }),
+            h("button", {
+              style: styles.menuItem,
+              onClick: async () => {
+                const ok = await copyText(detail.cwd || "");
+                setNotice(ok ? "copied cwd" : "copy failed");
+                setMenuOpen(false);
+              },
+            }, "Copy cwd"),
+            h("button", {
+              style: styles.menuItem,
+              onClick: () => { setMenuOpen(false); void act("reveal", { target: detail.taskId }); },
+            }, "Reveal cwd"),
+            detail.editorEnabled
+              ? h("button", {
+                  style: styles.menuItem,
+                  onClick: () => { setMenuOpen(false); void act("editor", { target: detail.taskId }); },
+                }, "Open editor")
+              : null,
+            h("div", { style: styles.divider }),
+            h("button", {
+              style: styles.menuItem,
+              onClick: () => { setMenuOpen(false); void act("interrupt", { target: detail.taskId }); },
+            }, "Interrupt"),
+            h("button", {
+              style: { ...styles.menuItem, ...styles.danger },
+              onClick: () => {
+                setMenuOpen(false);
+                if (window.confirm(`Close ${detail.name || detail.taskId}? The session file is retained.`)) {
+                  void act("close", { target: detail.taskId, force: true });
+                }
+              },
+            }, "Close"),
+          )
+        : h(React.Fragment, null,
+            h("button", {
+              style: styles.menuItem,
+              onClick: () => { setMenuOpen(false); void loadSelected(selected); },
+            }, "Refresh tail"),
+            h("button", {
+              style: styles.menuItem,
+              onClick: async () => {
+                const ok = await copyText(live?.tail?.text || "");
+                setNotice(ok ? "copied tail" : "copy failed");
+                setMenuOpen(false);
+              },
+            }, "Copy tail"),
+          );
+
+      const detailHead = h("div", { style: styles.detailHead },
+        h("div", { style: styles.detailTop },
+          wide
+            ? null
+            : h("button", {
+                style: styles.iconBtn,
+                title: "Back to fleet",
+                "aria-label": "Back to fleet",
+                onClick: () => { setSelected(null); setDetail(null); setLive(null); setMenuOpen(false); },
+              }, h(IconBack)),
+          h("span", { style: styles.detailName }, detail?.name || live?.name || selected?.name || selected?.paneId || "?"),
+          h("span", {
+            style: { ...styles.rowState, marginLeft: 4, color: statusColor(detailStatus || live?.status || selected?.status) },
+          }, detailStatus || live?.status || selected?.status || "?"),
+          h("div", { ref: menuRef, style: styles.menuWrap },
+            h("button", {
+              style: styles.iconBtn,
+              onClick: () => setMenuOpen((open) => !open),
+              onMouseEnter: (event) => { event.currentTarget.style.color = T.text; },
+              onMouseLeave: (event) => { event.currentTarget.style.color = T.mut; },
+              title: "Actions",
+              "aria-label": "Actions",
+              "aria-expanded": menuOpen,
+            }, h(IconDots)),
+            menuOpen
+              ? h("div", {
+                  style: styles.menu,
+                  role: "menu",
+                  onMouseOver: (event) => {
+                    const button = event.target.closest("button");
+                    if (button) button.style.background = T.hover;
+                  },
+                  onMouseOut: (event) => {
+                    const button = event.target.closest("button");
+                    if (button) button.style.background = "transparent";
+                  },
+                }, menuBody)
+              : null,
+          ),
         ),
-        checkedIds.length > 0
-          ? h("div", { style: { ...styles.bar, paddingTop: 4, paddingBottom: 4 } },
-              h("span", { style: styles.muted }, `${checkedIds.length} selected`),
-              h("button", { style: styles.button, onClick: () => void bulk("interrupt") }, "interrupt"),
-              h("button", { style: { ...styles.button, ...styles.danger }, onClick: () => void bulk("close") }, "close"),
-            )
-          : null,
-        error ? h("div", { style: { ...styles.notice, color: "#d96a6a" } }, error) : null,
-        notice ? h("div", { style: { ...styles.notice, color: "#8fcf95" } }, notice) : null,
-        h("div", { style: styles.body },
-          h("div", { style: styles.list },
-            rows.length === 0
-              ? h("div", { style: styles.empty }, ownedOnly ? "No owned agents." : "No agents. Spawn one with herdr_spawn_agent.")
-              : listContent,
-          ),
-          h("div", { style: styles.detail },
-            loadingSelected
-              ? h("div", { style: styles.empty }, "reading…")
-              : detail
+        h("div", { style: wide ? styles.detailMeta : { ...styles.detailMeta, paddingLeft: 28 } },
+          [detail?.kind || live?.kind || selected?.kind,
+            detail?.model || selected?.model,
+            detail?.machine || selected?.machine,
+            shortCwd(detail?.cwd || selected?.cwd)].filter(Boolean).join(" · ")),
+      );
+
+      const detailBody = loadingSelected && !detail && !live
+        ? h("div", { style: styles.emptyWrap }, h("div", { style: styles.emptyBody }, "Reading…"))
+        : detail
+          ? h(React.Fragment, null,
+              h("div", { style: styles.tabs },
+                ["final", "flow", "diff", "result"].map((name) =>
+                  h("button", {
+                    key: name,
+                    style: { ...styles.tab, ...(tab === name ? styles.tabActive : {}) },
+                    onClick: () => setTab(name),
+                  }, name),
+                ),
+              ),
+              tab === "final"
                 ? h(React.Fragment, null,
-                    h("div", { style: styles.tabs },
-                      ["final", "diff", "result"].map((name) =>
-                        h("button", {
-                          key: name,
-                          style: { ...styles.tab, ...(tab === name ? styles.tabActive : {}) },
-                          onClick: () => setTab(name),
-                        }, name),
-                      ),
+                    h("div", { style: styles.paneBar },
+                      h("span", { style: styles.paneLabel }, "final message"),
                       h("span", { style: { flex: 1 } }),
-                      h("select", {
-                        style: styles.select,
-                        value: template,
-                        onChange: (event) => setTemplate(event.target.value),
-                      },
-                        h("option", { value: "pr" }, "PR"),
-                        h("option", { value: "issue" }, "issue"),
-                        h("option", { value: "summary" }, "summary"),
-                      ),
-                      history.length > 0
-                        ? h("select", {
-                            style: styles.select,
-                            value: "",
-                            onChange: async (event) => {
-                              const item = history[Number(event.target.value)];
-                              if (item) {
-                                const ok = await copyText(item.text);
-                                setNotice(ok ? `copied history ${item.template}` : "copy failed");
-                              }
-                              event.target.value = "";
-                            },
-                          },
-                            h("option", { value: "" }, `history (${history.length})`),
-                            history.map((item, index) =>
-                              h("option", { key: index, value: String(index) }, `${item.template} · ${item.at}`),
-                            ),
-                          )
-                        : null,
-                      h("button", { style: styles.button, onClick: () => void copyDetail("packet") }, "copy packet"),
-                      h("button", { style: styles.button, onClick: () => void copyDetail("cwd") }, "copy cwd"),
-                      h("button", { style: styles.button, onClick: () => void act("reveal", { target: detail.taskId }) }, "reveal cwd"),
-                      detail.editorEnabled
-                        ? h("button", { style: styles.button, onClick: () => void act("editor", { target: detail.taskId }) }, "open editor")
-                        : null,
-                      h("button", { style: styles.button, onClick: () => void act("interrupt", { target: detail.taskId }) }, "interrupt"),
                       h("button", {
-                        style: { ...styles.button, ...styles.danger },
-                        onClick: () => {
-                          if (window.confirm(`Close ${detail.name || detail.taskId}? The session file is retained.`)) {
-                            void act("close", { target: detail.taskId, force: true });
-                          }
-                        },
-                      }, "close"),
+                        style: styles.iconBtn,
+                        onClick: () => void copyPane("final message", detail.finalMessage?.text || ""),
+                        title: "Copy final message",
+                        "aria-label": "Copy final message",
+                      }, h(IconCopy)),
                     ),
-                    tab === "final"
-                      ? h("pre", { style: styles.pre }, detail.finalMessage?.text || "(no final message yet)")
-                      : tab === "diff"
-                        ? h(DiffView, { text: detail.diff?.text || "", onNotice: setNotice })
-                        : h("pre", { style: styles.pre }, detail.result?.text || "(no result.md)"),
+                    detail.error
+                      ? h("div", { style: { ...styles.notice, color: T.err } }, `error: ${detail.error}`)
+                      : null,
+                    h("pre", { style: styles.pre }, detail.finalMessage?.text
+                      || (detail.status === "failed"
+                        ? "(no final message — open Flow to see what the child ran)"
+                        : "(no final message yet)")),
                   )
-                : live
-                  ? h(React.Fragment, null,
-                      h("div", { style: styles.tabs },
-                        h("span", { style: { fontWeight: 600 } }, live.name || live.paneId || "agent"),
-                        h("span", { style: { ...styles.badge, color: statusColor(live.status) } }, live.status || "?"),
-                        h("span", { style: styles.muted }, "read-only pane tail"),
-                        h("span", { style: { flex: 1 } }),
-                        h("button", { style: styles.button, onClick: () => void loadSelected(selected) }, "read"),
+                : tab === "flow"
+                  ? h(FlowView, {
+                      flow,
+                      loading: flowLoading,
+                      error: flowError,
+                      onRefresh: () => void loadFlow(detail.taskId, "tail"),
+                      onEarlier: () => void loadFlow(detail.taskId, "earlier"),
+                      onCopy: () => void copyFlow(),
+                    })
+                  : tab === "diff"
+                    ? h(DiffView, { text: detail.diff?.text || "", onNotice: setNotice })
+                    : h(React.Fragment, null,
+                        h("div", { style: styles.paneBar },
+                          h("span", { style: styles.paneLabel }, "result.md"),
+                          h("span", { style: { flex: 1 } }),
+                          h("button", {
+                            style: styles.iconBtn,
+                            onClick: () => void copyPane("result.md", detail.result?.text || ""),
+                            title: "Copy result.md",
+                            "aria-label": "Copy result.md",
+                          }, h(IconCopy)),
+                        ),
+                        h("pre", { style: styles.pre }, detail.result?.text || "(no result.md)"),
                       ),
-                      h("pre", { style: styles.pre }, live.tail?.text || "(no output)"),
-                    )
-                  : h("div", { style: styles.empty },
-                      selected
-                        ? "No readable task or live agent for this row."
-                        : "Select an owned task for the review packet, or a live agent for a read-only pane tail."),
+            )
+          : live
+            ? h(React.Fragment, null,
+                h("div", { style: styles.paneBar },
+                  h("span", { style: styles.paneLabel }, "pane tail · read-only"),
+                  h("span", { style: { flex: 1 } }),
+                  h("button", {
+                    style: styles.iconBtn,
+                    onClick: () => void loadSelected(selected),
+                    title: "Refresh tail",
+                    "aria-label": "Refresh tail",
+                  }, h(IconRefresh)),
+                  h("button", {
+                    style: styles.iconBtn,
+                    onClick: () => void copyPane("pane tail", live.tail?.text || ""),
+                    title: "Copy pane tail",
+                    "aria-label": "Copy pane tail",
+                  }, h(IconCopy)),
+                ),
+                h("pre", { style: styles.pre }, live.tail?.text || "(no output)"),
+              )
+            : h("div", { style: styles.emptyWrap },
+                h("span", { style: styles.emptyIcon }, h(IconFleet)),
+                h("div", { style: styles.emptyTitle }, selected ? "Nothing to read" : "Pick an agent"),
+                h("div", { style: styles.emptyBody },
+                  selected
+                    ? "This row has no readable task and no live pane tail."
+                    : "Choose a row to read its result, transcript, diff and review packet."),
+              );
+
+      const detailPane = h("div", { style: styles.detail }, detailHead, detailBody);
+
+      const splitting = wide && Boolean(selected);
+      const listPane = rows.length === 0
+        ? h("div", {
+            style: splitting
+              ? { ...styles.listWide, display: "flex", flexDirection: "column" }
+              : { ...styles.list, display: "flex", flexDirection: "column" },
+          }, emptyList)
+        : h("div", { style: splitting ? styles.listWide : styles.list }, listContent);
+
+      return h("div", { style: styles.root, ref: rootRef },
+        h("div", { style: styles.head },
+          h("div", { style: styles.headRow },
+            h("span", { style: styles.kicker }, "Agents"),
+            h("span", { style: styles.count },
+              query.trim() || machine !== "all"
+                ? `${rows.length}/${fleet.length}`
+                : String(rows.length)),
+            h("span", { style: { flex: 1 } }),
+            machines.length > 0
+              ? h("select", {
+                  style: styles.select,
+                  value: machine,
+                  "aria-label": "Machine",
+                  onChange: (event) => setMachine(event.target.value),
+                },
+                  h("option", { value: "all" }, "All machines"),
+                  machines.map((name) => h("option", { key: name, value: name }, name)),
+                )
+              : null,
+            h("span", {
+              title: error ? `offline · ${error}` : loading ? "refreshing" : "connected",
+              style: { ...styles.dot, width: 6, height: 6, marginTop: 0, background: error ? T.err : loading ? T.warn : T.ok },
+            }),
+            h("button", {
+              style: styles.iconBtn,
+              onClick: () => void refresh(),
+              disabled: loading,
+              title: "Refresh fleet",
+              "aria-label": "Refresh fleet",
+            }, h(IconRefresh)),
           ),
+          wide || !selected
+            ? h("label", { style: styles.search },
+              h(IconSearch),
+              h("input", {
+                style: styles.input,
+                value: query,
+                placeholder: "Search name, cwd, model",
+                "aria-label": "Search agents",
+                onChange: (event) => setQuery(event.target.value),
+              }),
+            )
+            : null,
+        ),
+        error ? h("div", { style: { ...styles.notice, color: T.err } }, error) : null,
+        notice ? h("div", { style: { ...styles.notice, color: T.ok } }, notice) : null,
+        h("div", { style: splitting ? styles.bodyWide : styles.body },
+          wide
+            ? (selected ? h(React.Fragment, null, listPane, detailPane) : listPane)
+            : selected ? detailPane : listPane,
         ),
       );
     }
@@ -554,7 +1061,7 @@ window.__ModuleLoader__.load({
             id: "fleet",
             order: 30,
             title: () => "Herdr fleet",
-            description: () => "Tasks, diffs and results",
+            description: () => "Fleet, run flow, diffs and results",
             icon: HerdrGuideIcon,
           }],
         }), "dsh-herdr: sidebar tab type");

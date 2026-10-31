@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { createHerdrApi } from "../lib/server/herdr-api.js";
+import { TranscriptService } from "../lib/services/transcript.js";
 import { HerdrError } from "../lib/domain/errors.js";
 
 function request(url, headers = {}) {
@@ -37,6 +38,32 @@ function response() {
   return res;
 }
 
+const SESSION_TEXT = `${[
+  { type: "message", message: { role: "user", content: "fix it" } },
+  {
+    type: "message",
+    message: {
+      role: "assistant",
+      content: [
+        { type: "text", text: "looking" },
+        { type: "toolCall", name: "bash", arguments: { command: "npm test" } },
+      ],
+    },
+  },
+  {
+    type: "message",
+    message: {
+      role: "toolResult",
+      toolName: "bash",
+      isError: false,
+      durationMs: 1200,
+      content: [{ type: "text", text: "pass" }],
+    },
+  },
+]
+  .map((entry) => JSON.stringify(entry))
+  .join("\n")}\n`;
+
 function setup() {
   const dir = mkdtempSync(join(tmpdir(), "herdr-api-"));
   const taskId = "t1";
@@ -57,18 +84,39 @@ function setup() {
     createdAt: 1,
     updatedAt: 2,
   };
-  writeFileSync(
-    join(dir, "session.jsonl"),
-    JSON.stringify({
-      type: "message",
-      message: { role: "assistant", content: [{ type: "text", text: "final words" }] },
-    }) + "\n",
-    "utf8",
-  );
+  const blind = {
+    schemaVersion: 1,
+    taskId: "t2",
+    name: "worker-b",
+    kind: "agy",
+    role: "worker",
+    status: "failed",
+    cwd: "/repo",
+    artifactDir: join(dir, "tasks", "t2"),
+    createdAt: 3,
+    updatedAt: 4,
+    error: "spawn failed: agent_not_ready",
+  };
+  const records = [record, blind];
+  writeFileSync(join(dir, "session.jsonl"), SESSION_TEXT, "utf8");
+  const store = {
+    find: async (target) =>
+      records.find((entry) => entry.taskId === target || entry.name === target),
+  };
+  const runtimes = {
+    resolve: async () => ({
+      io: {
+        readText: async (path) => {
+          if (path.endsWith("result.md"))
+            return "---\nstatus: completed\nsummary: a short summary\n---\nbody text";
+          if (path.endsWith("session.jsonl")) return SESSION_TEXT;
+          return undefined;
+        },
+      },
+    }),
+  };
   const api = createHerdrApi({
-    store: {
-      find: async (target) => (target === "t1" || target === "worker-a" ? record : undefined),
-    },
+    store,
     lifecycle: {
       list: async () => [{ owned: true, taskId, name: "worker-a", status: "completed" }],
       interrupt: async (target) => {
@@ -81,18 +129,8 @@ function setup() {
         return { closed: true, message: "closed" };
       },
     },
-    runtimes: {
-      resolve: async () => ({
-        io: {
-          readText: async (path) => {
-            if (path.endsWith("result.md"))
-              return "---\nstatus: completed\nsummary: a short summary\n---\nbody text";
-            if (path.endsWith("session.jsonl")) return "not used";
-            return undefined;
-          },
-        },
-      }),
-    },
+    runtimes,
+    transcript: new TranscriptService(store, runtimes),
     reveal: {
       reveal: async (target) => ({ revealed: true, cwd: "/repo", message: `revealed ${target}` }),
       editorEnabled: () => true,
@@ -109,7 +147,7 @@ function setup() {
     },
     paths: { artifactsRoot: join(dir, "artifacts") },
   });
-  return { dir, taskId, record, api, calls };
+  return { dir, taskId, record, blind, api, calls };
 }
 
 test("health and fleet answer with JSON envelopes", async () => {
@@ -230,6 +268,69 @@ test("live pane tails are read-only and 404 unknown agents", async () => {
     const missing = response();
     await api(request("/herdr/api/live?target=nope"), missing);
     assert.equal(missing.status, 404);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("transcript pages a pi session and the tail keeps the newest turns", async () => {
+  const { dir, taskId, api } = setup();
+  try {
+    const head = response();
+    await api(request(`/herdr/api/transcript?target=${taskId}&from=0&limit=2`), head);
+    assert.equal(head.status, 200);
+    const first = JSON.parse(head.body).transcript;
+    assert.equal(first.total, 3);
+    assert.deepEqual(
+      first.messages.map((message) => message.index),
+      [0, 1],
+    );
+    assert.equal(first.nextFrom, 2);
+    assert.equal(first.prevFrom, undefined);
+    assert.deepEqual(first.messages[1].toolCalls, [{ name: "bash", detail: "npm test" }]);
+
+    const tail = response();
+    await api(request(`/herdr/api/transcript?target=${taskId}&tail=1&limit=2`), tail);
+    const last = JSON.parse(tail.body).transcript;
+    assert.deepEqual(
+      last.messages.map((message) => message.index),
+      [1, 2],
+    );
+    assert.equal(last.prevFrom, 0);
+    assert.equal(last.nextFrom, undefined);
+    assert.equal(last.messages[1].role, "tool");
+    assert.equal(last.messages[1].toolName, "bash");
+    assert.equal(last.messages[1].durationMs, 1200);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a task without a pi session reports NO_TRANSCRIPT", async () => {
+  const { dir, api } = setup();
+  try {
+    const res = response();
+    await api(request("/herdr/api/transcript?target=t2"), res);
+    assert.equal(res.status, 409);
+    assert.equal(JSON.parse(res.body).code, "NO_TRANSCRIPT");
+
+    const missing = response();
+    await api(request("/herdr/api/transcript?target=nope"), missing);
+    assert.equal(missing.status, 404);
+    assert.equal(JSON.parse(missing.body).code, "TASK_NOT_FOUND");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("task detail exposes the recorded spawn error", async () => {
+  const { dir, api } = setup();
+  try {
+    const res = response();
+    await api(request("/herdr/api/task?target=t2"), res);
+    assert.equal(res.status, 200);
+    assert.equal(JSON.parse(res.body).task.error, "spawn failed: agent_not_ready");
+    assert.equal(JSON.parse(res.body).task.status, "failed");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

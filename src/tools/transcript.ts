@@ -4,11 +4,21 @@ import { text, wrapExecute } from "./shared.js";
 import type { ToolFactoryOptions } from "../host.js";
 import type { TranscriptReadResult } from "../services/transcript.js";
 
+function turnLabel(message: TranscriptReadResult["messages"][number]): string {
+  const role =
+    message.role === "tool" && message.toolName ? `tool:${message.toolName}` : message.role;
+  const flags = [
+    message.isError ? "error" : "",
+    typeof message.durationMs === "number" ? `${(message.durationMs / 1000).toFixed(1)}s` : "",
+  ].filter(Boolean);
+  return flags.length > 0 ? `${role} (${flags.join(" ")})` : role;
+}
+
 export function createTranscriptTool({ defineTool, deps }: ToolFactoryOptions) {
   return defineTool({
     name: "herdr_read_agent",
     description:
-      "Page through a delegated pi agent's session transcript: user/assistant turns with the tool calls each turn made. " +
+      "Page through a delegated pi agent's session transcript: user/assistant/tool turns with the tool calls each turn made. " +
       "Use it when the final message is not enough — to see what the child actually did, where a turn went wrong, or which tests it ran. " +
       "Only kind=pi has a transcript; for agy and others use herdr_get_agent_result (pane tail). Pagination is by turn index.",
     parameters: {
@@ -47,11 +57,14 @@ export function createTranscriptTool({ defineTool, deps }: ToolFactoryOptions) {
           `session: ${value.sessionPath}`,
         ];
         for (const message of value.messages) {
-          const calls = message.toolCalls.length > 0 ? ` [${message.toolCalls.join(", ")}]` : "";
-          lines.push("", `[${message.index}] ${message.role}${calls}:`, message.text);
+          lines.push("", `[${message.index}] ${turnLabel(message)}:`, message.text);
+          for (const call of message.toolCalls) {
+            lines.push(`  → ${call.name}${call.detail ? ` ${call.detail}` : ""}`);
+          }
         }
         if (value.nextFrom !== undefined)
           lines.push("", `next: call again with from=${value.nextFrom}`);
+        if (value.prevFrom !== undefined) lines.push(`earlier: from=${value.prevFrom}`);
         return text(lines.join("\n"));
       },
     },

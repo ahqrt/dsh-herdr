@@ -54,6 +54,15 @@ export class LifecycleService {
         { remediation: "close the pane in the Herdr UI after checking what runs there" },
       );
     }
+    // Keep the transcript readable after the pane is gone: a task that never
+    // settled otherwise loses the only pointer to its pi session.
+    if (!record.sessionPath && agent?.sessionPath) {
+      record.sessionPath = agent.sessionPath;
+      await store.update(record.taskId, {
+        sessionPath: agent.sessionPath,
+        updatedAt: Date.now(),
+      });
+    }
 
     const active =
       record.status === "working" ||
@@ -140,8 +149,36 @@ export class LifecycleService {
     );
     const rows: FleetRow[] = [];
     const claimed = new Set<string>();
+    const recovered = new Map<string, TaskRecord>();
 
+    // A spawn call that never returned (caller aborted, window closed) leaves
+    // the record at "working" with no session path. Herdr already reports the
+    // pane as done, so fold that settle back into the registry instead of
+    // showing a finished task as still running.
     for (const record of records) {
+      if (record.status !== "starting" && record.status !== "working") continue;
+      if (!record.promptedAt) continue;
+      const agent = byName.get(record.name) ?? byPane.get(record.paneId ?? "");
+      if (!agent || agent.status !== "done") continue;
+      const patch: Partial<TaskRecord> = {
+        status: "completed",
+        settledAt: record.settledAt ?? Date.now(),
+        updatedAt: Date.now(),
+      };
+      if (!record.sessionPath && agent.sessionPath) patch.sessionPath = agent.sessionPath;
+      const updated = await store.update(record.taskId, patch);
+      if (!updated) continue;
+      recovered.set(record.taskId, updated);
+      this.deps.audit.write({
+        event: "settle-recovered",
+        taskId: record.taskId,
+        paneId: agent.paneId,
+        sessionPath: updated.sessionPath,
+      });
+    }
+
+    for (const original of records) {
+      const record = recovered.get(original.taskId) ?? original;
       if (record.status === "closed") continue;
       const agent = byName.get(record.name) ?? byPane.get(record.paneId ?? "");
       if (agent?.paneId) claimed.add(agent.paneId);

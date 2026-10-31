@@ -1,6 +1,6 @@
 {
   "name": "dsh-herdr",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "description": "Delegate subtasks to Herdr-managed coding agents from DeepSeek Harness: pick the model, keep the pane, harvest the exact result, review in DSH.",
   "type": "module",
   "main": "./lib/index.js",
@@ -41,7 +41,7 @@
   "author": "ahqrt",
   "engines": {
     "node": ">=22",
-    "dsh": "0.2.1-rc.2"
+    "dsh": ">=0.2.1-rc.2 <0.2.2-0"
   },
   "repository": {
     "type": "git",
@@ -56,9 +56,10 @@
       "patch": "./cordis.patch.yml"
     },
     "compatibility": {
-      "dsh": "0.2.1-rc.2",
+      "dsh": ">=0.2.1-rc.2 <0.2.2-0",
       "dshReleases": {
-        "0.2.1-rc.2": "compatible"
+        "0.2.1-rc.2": "compatible",
+        "0.2.1-rc.3": "compatible"
       }
     },
     "client": {
@@ -70,7 +71,7 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": ">=0.2.1-rc.2 <0.2.2-0",
     "@deepseek-ai/schemastery": "~3.18.5"
   },
   "devDependencies": {

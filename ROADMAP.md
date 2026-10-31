@@ -71,9 +71,12 @@ has a place below, roughly in order of value.
 - **Packet clipboard history** of the last three copies.
 - **Keyboard navigation** for fleet rows (ArrowUp/ArrowDown/Enter).
 
-## 0.12 — panel depth
+## 0.12 — panel depth (run flow shipped in 0.12.0)
 
-- **Keyboard tab navigation** (Left/Right between final/diff/result).
+- **Run flow** *(shipped in 0.12.0)*: the `flow` tab replays the pi session turn by
+  turn — prompts, assistant text, tool calls with argument previews, tool results
+  with error/duration — and follows a running child.
+- **Keyboard tab navigation** (Left/Right between final/flow/diff/result).
 - **Editor presets** (`code`, `cursor`, `zed`) with detection.
 - **Packet history persistence** across panel remounts.
 

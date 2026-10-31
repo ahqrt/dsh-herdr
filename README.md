@@ -8,7 +8,7 @@
 
 `dsh-herdr` is the reference bridge between [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) and [Herdr](https://herdr.dev). It turns Herdr into an external subagent runtime: DSH stays the orchestrator and reviewer, while pi / agy / claude / codex / … do the work in visible, steerable panes.
 
-> Status: `0.11.x`, validated on DSH `0.2.1-rc.2` (all nine tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`). The public surface is the nine `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
+> Status: `0.11.x`, validated on DSH `0.2.1-rc.2` (all nine tools activate in a headless profile) and Herdr `0.9.4` (server `0.9.1`); admitted on DSH `0.2.1-rc.3` by the host compatibility preflight. The public surface is the nine `herdr_*` tools; breaking changes follow semver and are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -40,10 +40,11 @@ DSH subagents run in-process and share the harness model. Sometimes you want the
 | **Queue** | Over the cap, a spawn waits for a slot (`queueTimeoutMs`) instead of failing. |
 | **Isolation** | `isolated: true` runs the task in a fresh git worktree and returns its path. |
 | **Transcript** | `herdr_read_agent` pages the pi session instead of only the final message. |
+| **Run flow** | The panel's `flow` tab replays the same session turn by turn: prompts, assistant text, every tool call with its argument preview, and each tool result with error/duration. It follows a running child. |
 | **Event waits** | An opt-in socket transport waits on `agent.wait` server-side; a connect failure falls back to the CLI. |
 | **Remote machines** | `machine` on spawn/list/result/message, via `herdr --machine`; SSH file bridge (`machineTargets`) removes the mount requirement. |
 | **Native subagent** | A `herdr` subagent provider routes a `dsh-tool-subagent` row through Herdr for native cards, catalog, and cancellation. |
-| **Web panel** | A `Herdr` right-sidebar tab: searchable/grouped fleet, read-only tails, per-file diff, packet templates/history, reveal/open-editor cwd, and bulk interrupt/close. |
+| **Web panel** | A `Herdr` right-sidebar tab: searchable/grouped fleet, run flow, read-only tails, per-file diff, packet templates/history, reveal/open-editor cwd, and bulk interrupt/close. |
 | **Diagnosis** | `herdr_doctor` checks binary, server, kinds, aliases, directories, topology, and pi in one call. |
 
 ---
@@ -171,7 +172,13 @@ need the full review packet (diff, session path, artifacts, blocked question).
 
 The plugin contributes a `Herdr` tab to the right sidebar (also reachable from
 the sidebar guide). It lists the live fleet and, for an owned task, shows the
-final message, `result.md`, and the diff split into per-file sections. Agents
+run flow, the final message, `result.md`, and the diff split into per-file
+sections. The `flow` tab reads the same pi session the transcript tool pages:
+turns in order, each assistant message with the tool calls it made (name +
+argument preview such as the bash command), and each tool result with its
+error flag and duration. It opens on the newest turns, loads older ones on
+demand, and keeps following a running child; a task that failed before its
+agent started shows the recorded error instead of a silent empty pane. Agents
 this plugin did not spawn show a read-only pane tail instead. Owned tasks can be
 interrupted or closed from the detail header or in bulk; both actions reuse the
 lifecycle service's ownership gates, and close asks for confirmation. Diff hunks
@@ -184,8 +191,8 @@ three-entry history.
 
 ![Herdr fleet panel](https://raw.githubusercontent.com/ahqrt/dsh-herdr/main/docs/assets/herdr-panel.png)
 
-It reads three same-origin endpoints under `/herdr/api` (`health`, `fleet`,
-`task`); no extra config.
+It reads four same-origin endpoints under `/herdr/api` (`health`, `fleet`,
+`task`, `transcript`); no extra config.
 
 ## How a result is produced
 
@@ -214,7 +221,7 @@ Details and threat model: [docs/security.md](docs/security.md).
 
 | Component | Tested | Notes |
 |---|---|---|
-| DSH | `0.2.1-rc.2` | desktop runtime; tool + workingDirectory APIs |
+| DSH | `0.2.1-rc.2` (validated), `0.2.1-rc.3` (preflight) | desktop runtime; tool + workingDirectory APIs |
 | Herdr | `0.9.4` client / `0.9.1` server | hard floor `>= 0.9.0` |
 | Node | 22, 24 | ESM, no native deps |
 | Kinds | `pi` (full), `agy` (launch-only), others via `agent_args` | model/thinking flags are pi-only by design |

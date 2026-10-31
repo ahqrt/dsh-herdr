@@ -73,6 +73,7 @@ Additive only: `herdr_inbox`, `herdr_read_agent`, `isolated`, `remove_worktree`,
 | | Tested | Notes |
 |---|---|---|
 | DSH | `0.2.1-rc.2` | Headless `web` profile boot: all nine tools activated (the loader compiles every parameter/output schema). The tool and workingDirectory APIs are the only host dependencies. |
+| DSH | `0.2.1-rc.3` | Admitted by the host compatibility preflight (`engines.dsh` is the channel range `>=0.2.1-rc.2 <0.2.2-0`). rc.3 adds plugin rows and slots only; the tool and workingDirectory APIs are unchanged. The headless matrix has not been re-run on rc.3. |
 | Herdr client | `0.9.4` | Hard floor `0.9.0` (the `agent start --kind` contract). |
 | Herdr server | `0.9.1` | Client/server protocol `22` at the time of writing. The opt-in socket adapter targets protocol 22 and falls back on connect failures. |
 | Node | `22.22.3`, `24.x` in CI | ESM only; no native modules. |

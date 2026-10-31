@@ -8,7 +8,7 @@
 
 `dsh-herdr` 是 DeepSeek Harness 与 [Herdr](https://herdr.dev) 之间的参考桥接。它把 Herdr 当成外部子代理运行时：DSH 负责编排和验收，pi / agy / claude / codex 在你看得见、能接管的 pane 里干活。
 
-> 状态：`0.11.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
+> 状态：`0.11.x`，已在 DSH `0.2.1-rc.2` 上验证（headless profile 中 9 个工具全部激活），实测 Herdr `0.9.4`（server `0.9.1`）；DSH `0.2.1-rc.3` 已通过宿主兼容性预检。公共接口就是 9 个 `herdr_*` 工具；破坏性变更遵循 semver，并记录在 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
@@ -40,10 +40,11 @@ DSH 自带 subagent 跑在进程内，和主会话共用模型。有些场景你
 | **队列** | 超过并发上限时等待空位（`queueTimeoutMs`），不是立刻失败。 |
 | **隔离** | `isolated: true` 在独立 git worktree 里跑，返回路径。 |
 | **Transcript** | `herdr_read_agent` 按 turn 翻 pi session，不只看最终答复。 |
+| **运行流程** | 面板的 `flow` 标签页把同一份 session 逐 turn 展开：prompt、assistant 文本、每次工具调用及其参数预览、每条工具结果的错误标记与耗时；子 agent 还在跑时会自动跟随。 |
 | **事件等待** | 可选 socket 传输，用 `agent.wait` 在服务端等；连接失败自动退回 CLI。 |
 | **远程机器** | spawn/list/result/message 支持 `machine`，走 `herdr --machine`；SSH 文件桥（`machineTargets`）不再需要本地挂载。 |
 | **原生 subagent** | 注册 `herdr` subagent provider，让 `dsh-tool-subagent` 的委派走 Herdr，获得原生卡片、catalog 和取消。 |
-| **Web 面板** | 右侧栏 `Herdr` 标签页：可搜索/分组舰队、外部 agent 只读输出、按文件分组的 diff、packet 模板/历史、reveal 或 open editor，以及批量 interrupt/close。 |
+| **Web 面板** | 右侧栏 `Herdr` 标签页：可搜索/分组舰队、运行流程、外部 agent 只读输出、按文件分组的 diff、packet 模板/历史、reveal 或 open editor，以及批量 interrupt/close。 |
 | **可诊断** | `herdr_doctor` 一次检查 binary、server、kinds、别名表、目录、拓扑、pi。 |
 
 ---
@@ -166,8 +167,11 @@ blocked 问题时用 `herdr_spawn_agent`。
 ### Web 面板
 
 插件会在右侧栏贡献一个 `Herdr` 标签页（也可以从侧栏 guide 打开）。它列出实时
-agent；自己派出的任务显示最终消息、`result.md` 和按文件分组的 diff，外部 agent 只显示只读的
-pane 输出。自有任务可以单个或批量 interrupt/close，动作复用 lifecycle 的 ownership gate，
+agent；自己派出的任务显示运行流程、最终消息、`result.md` 和按文件分组的 diff，外部 agent 只显示只读的
+pane 输出。`flow` 标签页读的就是 `herdr_read_agent` 翻的那份 pi session：按顺序列出
+turn，每条 assistant 消息带上它发起的工具调用（名称 + 参数预览，比如 bash 命令），
+每条工具结果带错误标记和耗时；默认打开最新几页、按需往前翻，子 agent 还在跑时持续跟随；
+如果任务在 agent 启动前就失败了，这里会显示记录下来的错误，而不是一片空白。自有任务可以单个或批量 interrupt/close，动作复用 lifecycle 的 ownership gate，
 close 会先确认；diff 支持 hunk 高亮、整包复制和单文件复制。详情头部还能复制完整的
 Markdown review packet（PR / issue / summary 三种模板）、任务 cwd，或直接在系统文件管理器中
 reveal cwd 或用配置的编辑器打开；舰队搜索覆盖 name、cwd、kind、model 和 task id，
@@ -175,7 +179,7 @@ reveal cwd 或用配置的编辑器打开；舰队搜索覆盖 name、cwd、kind
 
 ![Herdr 面板](https://raw.githubusercontent.com/ahqrt/dsh-herdr/main/docs/assets/herdr-panel.png)
 
-数据来自 `/herdr/api` 下的三个同源只读接口（`health`、`fleet`、`task`），不需要额外配置。
+数据来自 `/herdr/api` 下的四个同源只读接口（`health`、`fleet`、`task`、`transcript`），不需要额外配置。
 
 ## 结果是怎么来的
 
@@ -204,7 +208,7 @@ Git 证据独立于子 agent：spawn 时记 `baseline HEAD`，harvest 时 `git d
 
 | 组件 | 实测 | 说明 |
 |---|---|---|
-| DSH | `0.2.1-rc.2` | desktop 运行时；依赖 tools + workingDirectory 服务 |
+| DSH | `0.2.1-rc.2`（已实测）、`0.2.1-rc.3`（预检通过） | desktop 运行时；依赖 tools + workingDirectory 服务 |
 | Herdr | `0.9.4` client / `0.9.1` server | 硬下限 `>= 0.9.0` |
 | Node | 22、24 | ESM，无原生依赖 |
 | Kinds | `pi`（完整）、`agy`（仅启动）、其它走 `agent_args` | model/thinking 只对 pi 开放，这是设计 |

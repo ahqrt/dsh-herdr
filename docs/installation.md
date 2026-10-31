@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| DSH | `0.2.1-rc.2` (desktop runtime or a CLI profile with the same base) |
+| DSH | `>=0.2.1-rc.2 <0.2.2-0` (desktop runtime or a CLI profile with the same base; validated on `0.2.1-rc.2`, preflight-admitted on `0.2.1-rc.3`) |
 | Herdr | `>= 0.9.0`; `herdr` on `PATH` |
 | pi | only for `kind=pi`; `pi --version` should work in the same shell |
 | Node | 22+ (the host provides it; the plugin has no native deps) |

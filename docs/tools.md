@@ -136,7 +136,7 @@ Types: `BLOCKED`, `REVIEW_REQUEST`, `COMPLETE`, `NOTE`, `ACCEPT`, `REJECT`; unkn
 | `from` | number | `0` | First turn index. |
 | `limit` | number | `20` | Turns per page (100 cap). |
 
-Only `kind=pi` exposes a session transcript. The result includes `total` and `nextFrom`; each message has `role`, `text`, and the `toolCalls` that turn made. Messages are truncated at 6,000 characters; page instead of requesting everything.
+Only `kind=pi` exposes a session transcript. The result includes `total`, `nextFrom` and `prevFrom`; each message has `role` (`user`, `assistant`, `tool`, `system`), `text`, and the `toolCalls` that turn made. A tool call is `{ name, detail }`, where `detail` is a one-line argument preview (the bash command, the edited path). Tool results also carry `toolName`, `isError`, and `durationMs`. A task that failed before its agent started has no transcript and returns `NO_TRANSCRIPT` with the recorded task error. Messages are truncated at 6,000 characters; page instead of requesting everything.
 
 ## `herdr_doctor`
 
